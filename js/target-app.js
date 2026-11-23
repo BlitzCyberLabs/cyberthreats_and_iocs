@@ -1,8 +1,7 @@
 /**
- * Aegis Corporate Enterprise Portal
- * Real-world looking enterprise asset management & document repository.
- * Contains authentic attack surfaces for SQL Injection, Directory Traversal, and Cross-Site Scripting.
- * Generates accurate real-time HTTP telemetry into the SOC SIEM console.
+ * Aegis Enterprise Portal (White / Light Theme Web Application)
+ * Realistic corporate portal with Search Bar, Document Center, and Login Page.
+ * Emits real-time HTTP web application logs to the SOC SIEM Monitor.
  */
 
 import { logEngine } from './log-engine.js';
@@ -11,11 +10,9 @@ import { sfx, showToast, escapeHtml } from './utils.js';
 class TargetApp {
   constructor() {
     this.container = null;
-    this.currentView = 'directory'; // 'directory' | 'documents' | 'login' | 'support'
-    this.tickets = [
-      { id: "TCK-1042", user: "j.miller@aegiscorp.internal", subject: "VPN client configuration timeout", date: "Today at 08:30" },
-      { id: "TCK-1041", user: "k.turner@aegiscorp.internal", subject: "Request access to Q4 compliance folder", date: "Yesterday at 16:15" }
-    ];
+    this.currentView = 'search'; // 'search' | 'documents' | 'login'
+    this.clientIp = '203.0.113.195';
+    this.hostDomain = 'portal.aegis-corp.com';
   }
 
   init(containerId) {
@@ -33,157 +30,151 @@ class TargetApp {
     if (!this.container) return;
 
     this.container.innerHTML = `
-      <div class="flex flex-col h-full bg-[#0d131f] text-slate-100 rounded-xl border border-slate-800 shadow-2xl overflow-hidden font-sans">
-        <!-- Realistic Browser URL / Address Bar -->
-        <div class="bg-slate-900/90 border-b border-slate-800 px-4 py-3 flex flex-wrap items-center justify-between gap-3">
+      <!-- White / Light Theme Web Application Container -->
+      <div class="bg-white text-slate-800 rounded-xl border border-slate-200 shadow-xl overflow-hidden font-sans">
+        
+        <!-- Corporate White Header -->
+        <header class="bg-white border-b border-slate-200 px-6 py-4 flex flex-wrap items-center justify-between gap-4">
           <div class="flex items-center gap-3">
-            <div class="flex items-center gap-1.5">
-              <span class="w-3 h-3 rounded-full bg-rose-500/80 inline-block"></span>
-              <span class="w-3 h-3 rounded-full bg-amber-500/80 inline-block"></span>
-              <span class="w-3 h-3 rounded-full bg-emerald-500/80 inline-block"></span>
+            <div class="w-10 h-10 rounded-lg bg-blue-600 flex items-center justify-center text-white font-bold text-lg shadow-sm">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
             </div>
-            
-            <div class="flex items-center bg-slate-950 px-3 py-1.5 rounded-lg border border-slate-800 text-xs font-mono text-slate-300 w-80 md:w-96 truncate shadow-inner">
-              <svg class="w-3.5 h-3.5 mr-2 text-emerald-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
-              <span class="text-slate-500">https://</span><span class="text-emerald-400 font-medium">portal.aegiscorp.internal</span><span class="text-cyan-300">${this.getPathForView()}</span>
+            <div>
+              <div class="flex items-center gap-2">
+                <h1 class="text-base font-bold text-slate-900 tracking-tight">Aegis Enterprise Portal</h1>
+                <span class="text-[11px] font-medium px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">Production v3.4</span>
+              </div>
+              <p class="text-xs text-slate-500 font-mono">Host: https://${this.hostDomain}</p>
             </div>
           </div>
 
-          <!-- Enterprise Navigation -->
-          <div class="flex items-center gap-1 bg-slate-950 p-1 rounded-lg border border-slate-800 text-xs">
-            <button id="nav-directory" class="px-3 py-1.5 rounded-md transition-all ${this.currentView === 'directory' ? 'bg-slate-800 text-emerald-400 font-semibold border border-slate-700' : 'text-slate-400 hover:text-slate-200'}">
-              🏢 Asset Directory
+          <!-- Section Switcher Tabs -->
+          <nav class="flex items-center gap-1 bg-slate-100 p-1 rounded-lg border border-slate-200 text-xs font-medium">
+            <button id="webapp-nav-search" class="px-3.5 py-1.5 rounded-md transition-all ${this.currentView === 'search' ? 'bg-white text-blue-700 font-semibold shadow-sm' : 'text-slate-600 hover:text-slate-900'}">
+              🔍 Asset & Employee Search
             </button>
-            <button id="nav-documents" class="px-3 py-1.5 rounded-md transition-all ${this.currentView === 'documents' ? 'bg-slate-800 text-emerald-400 font-semibold border border-slate-700' : 'text-slate-400 hover:text-slate-200'}">
+            <button id="webapp-nav-docs" class="px-3.5 py-1.5 rounded-md transition-all ${this.currentView === 'documents' ? 'bg-white text-blue-700 font-semibold shadow-sm' : 'text-slate-600 hover:text-slate-900'}">
               📁 Document Center
             </button>
-            <button id="nav-support" class="px-3 py-1.5 rounded-md transition-all ${this.currentView === 'support' ? 'bg-slate-800 text-emerald-400 font-semibold border border-slate-700' : 'text-slate-400 hover:text-slate-200'}">
-              🎫 Support
+            <button id="webapp-nav-login" class="px-3.5 py-1.5 rounded-md transition-all ${this.currentView === 'login' ? 'bg-blue-600 text-white font-semibold shadow-sm' : 'text-slate-600 hover:text-slate-900'}">
+              🔐 Employee Login
             </button>
-            <button id="nav-login" class="px-3 py-1.5 rounded-md transition-all ${this.currentView === 'login' ? 'bg-emerald-600 text-white font-semibold' : 'text-slate-400 hover:text-slate-200'}">
-              🔐 SSO Login
-            </button>
-          </div>
-        </div>
+          </nav>
+        </header>
 
-        <!-- Main Body Content -->
-        <div class="flex-1 overflow-y-auto p-4 sm:p-6" id="target-subview-content">
-          ${this.renderSubview()}
-        </div>
+        <!-- Main Body Area -->
+        <main class="bg-slate-50 p-6 md:p-8 min-h-[520px]">
+          ${this.renderViewContent()}
+        </main>
+
+        <!-- Corporate White Footer -->
+        <footer class="bg-white border-t border-slate-200 px-6 py-3 flex flex-wrap items-center justify-between text-xs text-slate-500">
+          <div>&copy; 2026 Aegis Global Operations Inc. • Authorized Access Only</div>
+          <div class="flex items-center gap-2 font-mono text-[11px]">
+            <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+            <span>Audited by CyberDefense SOC (${this.clientIp})</span>
+          </div>
+        </footer>
       </div>
     `;
 
     this.bindEvents();
   }
 
-  getPathForView() {
+  renderViewContent() {
     switch (this.currentView) {
-      case 'directory': return '/api/search';
-      case 'documents': return '/api/documents';
-      case 'support': return '/api/tickets';
-      case 'login': return '/auth/login';
-      default: return '/';
-    }
-  }
-
-  renderSubview() {
-    switch (this.currentView) {
-      case 'directory': return this.renderDirectoryView();
+      case 'search': return this.renderSearchView();
       case 'documents': return this.renderDocumentsView();
       case 'login': return this.renderLoginView();
-      case 'support': return this.renderSupportView();
       default: return '';
     }
   }
 
-  // --- 1. ASSET DIRECTORY (SQL Injection & Reflected XSS) ---
-  renderDirectoryView() {
+  // --- 1. SEARCH BAR VIEW (SQLi & Reflected XSS) ---
+  renderSearchView() {
     return `
-      <div class="max-w-5xl mx-auto space-y-5">
-        <!-- Hero Search Section -->
-        <div class="bg-gradient-to-r from-slate-900 to-[#131b2e] p-6 rounded-xl border border-slate-800 shadow-xl space-y-4">
-          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-            <div>
-              <h2 class="text-lg font-bold text-white flex items-center gap-2">
-                Enterprise Infrastructure Directory
-              </h2>
-              <p class="text-xs text-slate-400">Search corporate hardware inventory, network gateways, and server assets.</p>
-            </div>
-            <span class="text-[11px] font-mono text-cyan-400 bg-cyan-950/60 border border-cyan-800/80 px-2.5 py-1 rounded-md self-start">
-              Endpoint: GET /api/search?q=
-            </span>
+      <div class="max-w-4xl mx-auto space-y-6">
+        <!-- Search Card -->
+        <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-4">
+          <div class="space-y-1">
+            <h2 class="text-base font-bold text-slate-900">Corporate Directory & Asset Query</h2>
+            <p class="text-xs text-slate-500">Search for employees, corporate workstations, VPN routers, or database instances.</p>
           </div>
 
-          <form id="asset-search-form" class="flex gap-2">
+          <form id="webapp-search-form" class="flex gap-2">
             <div class="relative flex-1">
               <input 
                 type="text" 
-                id="asset-search-input" 
-                placeholder="Search by asset tag, hostname, appliance type, or model..." 
-                class="w-full bg-slate-950 border border-slate-700/80 rounded-lg px-4 py-2.5 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-emerald-500 font-mono shadow-inner"
+                id="webapp-search-input" 
+                placeholder="Search by asset tag, hostname, appliance type, or employee name..." 
+                class="w-full bg-white border border-slate-300 rounded-lg px-4 py-2.5 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 shadow-sm font-mono"
               />
             </div>
-            <button type="submit" class="bg-emerald-600 hover:bg-emerald-500 text-white font-medium px-5 py-2.5 rounded-lg text-xs transition-all flex items-center gap-1.5 shadow-md">
+            <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-medium px-5 py-2.5 rounded-lg text-xs transition-all shadow-sm flex items-center gap-1.5">
               <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-              <span>Query</span>
+              Search
             </button>
           </form>
+
+          <div class="text-[11px] text-slate-500 font-mono">
+            Endpoint: <code class="bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded">GET /api/search?q=</code>
+          </div>
         </div>
 
-        <!-- Dynamic Results Area -->
-        <div id="asset-results-area" class="space-y-4">
-          ${this.getStandardDirectoryHTML()}
+        <!-- Dynamic Results Container -->
+        <div id="webapp-search-results">
+          ${this.getStandardAssetTable()}
         </div>
       </div>
     `;
   }
 
-  getStandardDirectoryHTML() {
+  getStandardAssetTable() {
     return `
-      <div class="bg-slate-900/90 rounded-xl border border-slate-800 overflow-hidden shadow-xl">
-        <div class="px-5 py-3.5 border-b border-slate-800 flex items-center justify-between text-xs">
-          <span class="font-bold text-slate-300">Active Infrastructure Assets</span>
-          <span class="text-[11px] text-slate-400 font-mono">Showing 4 indexed assets</span>
+      <div class="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
+        <div class="px-5 py-3.5 border-b border-slate-200 flex items-center justify-between text-xs font-semibold text-slate-700">
+          <span>Active Infrastructure Records</span>
+          <span class="text-slate-400 font-normal font-mono">4 assets indexed</span>
         </div>
         <div class="overflow-x-auto">
-          <table class="w-full text-left font-mono text-xs">
-            <thead class="bg-slate-950 text-slate-400 border-b border-slate-800">
+          <table class="w-full text-left font-sans text-xs">
+            <thead class="bg-slate-50 text-slate-600 border-b border-slate-200 font-medium">
               <tr>
                 <th class="p-3">Asset ID</th>
-                <th class="p-3">Appliance Name</th>
-                <th class="p-3">IP / Subnet</th>
-                <th class="p-3">Environment</th>
+                <th class="p-3">Asset Name</th>
+                <th class="p-3">Internal IP</th>
+                <th class="p-3">Department</th>
                 <th class="p-3">Status</th>
               </tr>
             </thead>
-            <tbody class="divide-y divide-slate-800/80 text-slate-200">
-              <tr class="hover:bg-slate-800/30">
-                <td class="p-3 text-cyan-400 font-bold">ASSET-101</td>
-                <td class="p-3 font-medium text-white">Edge Perimeter Firewall (Primary)</td>
-                <td class="p-3 text-slate-400">10.0.1.1/24</td>
-                <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] bg-slate-800 text-slate-300">Production</span></td>
-                <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] bg-emerald-950 text-emerald-400 border border-emerald-800">Online</span></td>
+            <tbody class="divide-y divide-slate-100 text-slate-700 font-mono">
+              <tr class="hover:bg-slate-50">
+                <td class="p-3 font-bold text-blue-600">AST-101</td>
+                <td class="p-3 font-medium text-slate-900 font-sans">Edge Perimeter Firewall</td>
+                <td class="p-3 text-slate-600">10.0.1.1</td>
+                <td class="p-3 font-sans">Network Ops</td>
+                <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] bg-emerald-50 text-emerald-700 border border-emerald-200 font-sans font-semibold">Active</span></td>
               </tr>
-              <tr class="hover:bg-slate-800/30">
-                <td class="p-3 text-cyan-400 font-bold">ASSET-102</td>
-                <td class="p-3 font-medium text-white">Core PostgreSQL Database Cluster</td>
-                <td class="p-3 text-slate-400">10.0.4.12/24</td>
-                <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] bg-slate-800 text-slate-300">Production</span></td>
-                <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] bg-emerald-950 text-emerald-400 border border-emerald-800">Online</span></td>
+              <tr class="hover:bg-slate-50">
+                <td class="p-3 font-bold text-blue-600">AST-102</td>
+                <td class="p-3 font-medium text-slate-900 font-sans">PostgreSQL Database Primary</td>
+                <td class="p-3 text-slate-600">10.0.4.12</td>
+                <td class="p-3 font-sans">Database Eng</td>
+                <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] bg-emerald-50 text-emerald-700 border border-emerald-200 font-sans font-semibold">Active</span></td>
               </tr>
-              <tr class="hover:bg-slate-800/30">
-                <td class="p-3 text-cyan-400 font-bold">ASSET-103</td>
-                <td class="p-3 font-medium text-white">Enterprise Syslog / SIEM Collector</td>
-                <td class="p-3 text-slate-400">10.0.8.50/24</td>
-                <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] bg-slate-800 text-slate-300">Security</span></td>
-                <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] bg-emerald-950 text-emerald-400 border border-emerald-800">Online</span></td>
+              <tr class="hover:bg-slate-50">
+                <td class="p-3 font-bold text-blue-600">AST-103</td>
+                <td class="p-3 font-medium text-slate-900 font-sans">Central Syslog Collector Node</td>
+                <td class="p-3 text-slate-600">10.0.8.50</td>
+                <td class="p-3 font-sans">Security SOC</td>
+                <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] bg-emerald-50 text-emerald-700 border border-emerald-200 font-sans font-semibold">Active</span></td>
               </tr>
-              <tr class="hover:bg-slate-800/30">
-                <td class="p-3 text-cyan-400 font-bold">ASSET-104</td>
-                <td class="p-3 font-medium text-white">Corporate Identity SSO Gateway</td>
-                <td class="p-3 text-slate-400">10.0.2.10/24</td>
-                <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] bg-slate-800 text-slate-300">Identity</span></td>
-                <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] bg-emerald-950 text-emerald-400 border border-emerald-800">Online</span></td>
+              <tr class="hover:bg-slate-50">
+                <td class="p-3 font-bold text-blue-600">AST-104</td>
+                <td class="p-3 font-medium text-slate-900 font-sans">Corporate Identity SSO Gateway</td>
+                <td class="p-3 text-slate-600">10.0.2.10</td>
+                <td class="p-3 font-sans">Identity Access</td>
+                <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] bg-emerald-50 text-emerald-700 border border-emerald-200 font-sans font-semibold">Active</span></td>
               </tr>
             </tbody>
           </table>
@@ -192,234 +183,130 @@ class TargetApp {
     `;
   }
 
-  // --- 2. DOCUMENT REPOSITORY (Directory Traversal / Path Traversal) ---
+  // --- 2. DOCUMENT CENTER (Directory Traversal) ---
   renderDocumentsView() {
     return `
-      <div class="max-w-4xl mx-auto space-y-5">
-        <div class="bg-gradient-to-r from-slate-900 to-[#131b2e] p-6 rounded-xl border border-slate-800 shadow-xl space-y-4">
-          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-            <div>
-              <h2 class="text-lg font-bold text-white flex items-center gap-2">
-                Corporate Document Repository
-              </h2>
-              <p class="text-xs text-slate-400">Access and preview compliance audits, operational guidelines, and server policy files.</p>
-            </div>
-            <span class="text-[11px] font-mono text-cyan-400 bg-cyan-950/60 border border-cyan-800/80 px-2.5 py-1 rounded-md self-start">
-              Endpoint: GET /api/documents?file=
-            </span>
+      <div class="max-w-4xl mx-auto space-y-6">
+        <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-4">
+          <div class="space-y-1">
+            <h2 class="text-base font-bold text-slate-900">Secure Document & Compliance Repository</h2>
+            <p class="text-xs text-slate-500">Access and view corporate policies, compliance audits, and architectural reports.</p>
           </div>
 
-          <!-- Document Retrieval Form -->
-          <form id="doc-fetch-form" class="flex gap-2">
+          <form id="webapp-doc-form" class="flex gap-2">
             <div class="relative flex-1">
               <input 
                 type="text" 
-                id="doc-file-input" 
+                id="webapp-doc-input" 
                 value="annual_compliance_2026.pdf" 
-                placeholder="Enter filename to view (e.g. annual_compliance_2026.pdf)" 
-                class="w-full bg-slate-950 border border-slate-700/80 rounded-lg px-4 py-2 text-xs text-slate-100 font-mono focus:outline-none focus:border-emerald-500 shadow-inner"
+                placeholder="Enter filename to load (e.g. annual_compliance_2026.pdf)" 
+                class="w-full bg-white border border-slate-300 rounded-lg px-4 py-2 text-xs text-slate-900 font-mono focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 shadow-sm"
               />
             </div>
-            <button type="submit" class="bg-cyan-600 hover:bg-cyan-500 text-white font-medium px-4 py-2 rounded-lg text-xs transition-all flex items-center gap-1.5 shadow-md">
+            <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-medium px-4 py-2 rounded-lg text-xs transition-all shadow-sm flex items-center gap-1.5">
               <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
               <span>Load File</span>
             </button>
           </form>
 
-          <!-- Standard Documents List -->
-          <div class="pt-2 border-t border-slate-800/80">
-            <span class="text-[11px] text-slate-400 font-mono block mb-2">Available Public Documents:</span>
-            <div class="flex flex-wrap gap-2 text-xs">
-              <button type="button" class="btn-sample-doc bg-slate-800 hover:bg-slate-700 text-slate-300 px-2.5 py-1 rounded font-mono border border-slate-700" data-doc="annual_compliance_2026.pdf">
-                📄 annual_compliance_2026.pdf
-              </button>
-              <button type="button" class="btn-sample-doc bg-slate-800 hover:bg-slate-700 text-slate-300 px-2.5 py-1 rounded font-mono border border-slate-700" data-doc="it_security_charter.docx">
-                📄 it_security_charter.docx
-              </button>
-              <button type="button" class="btn-sample-doc bg-slate-800 hover:bg-slate-700 text-slate-300 px-2.5 py-1 rounded font-mono border border-slate-700" data-doc="incident_playbook.pdf">
-                📄 incident_playbook.pdf
-              </button>
-            </div>
+          <div class="flex items-center justify-between text-[11px] text-slate-500 font-mono pt-2 border-t border-slate-100">
+            <span>Endpoint: <code class="bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded">GET /api/documents?file=</code></span>
+            <span>Available: annual_compliance_2026.pdf, it_security_charter.docx</span>
           </div>
         </div>
 
-        <!-- File Content Display Card -->
-        <div id="doc-preview-area" class="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-xl space-y-3 font-mono text-xs">
-          ${this.getStandardDocumentPreviewHTML('annual_compliance_2026.pdf')}
+        <!-- Document Preview Window -->
+        <div id="webapp-doc-preview" class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm space-y-3">
+          ${this.getStandardDocumentPreview('annual_compliance_2026.pdf')}
         </div>
       </div>
     `;
   }
 
-  getStandardDocumentPreviewHTML(filename) {
+  getStandardDocumentPreview(filename) {
     return `
-      <div class="flex items-center justify-between border-b border-slate-800 pb-2.5">
-        <span class="text-slate-400">File Preview: <strong class="text-white">${escapeHtml(filename)}</strong></span>
-        <span class="text-emerald-400 text-[11px]">HTTP 200 OK</span>
+      <div class="flex items-center justify-between border-b border-slate-200 pb-2.5">
+        <span class="text-xs text-slate-600">File Preview: <strong class="text-slate-900 font-mono">${escapeHtml(filename)}</strong></span>
+        <span class="text-xs font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">HTTP 200 OK</span>
       </div>
-      <div class="bg-slate-950 p-4 rounded-lg border border-slate-800/80 text-slate-300 leading-relaxed font-sans text-xs">
-        <h4 class="font-bold text-white text-sm mb-2">Aegis Corporate IT Security & Compliance Charter 2026</h4>
-        <p class="mb-2">This document certifies that Aegis Corporation adheres to enterprise access control standards and automated logging policies. All inbound HTTP requests to internal endpoints are retained in SIEM archives for forensic inspection.</p>
-        <p class="text-slate-400">Storage Root: <code>/var/www/portal/storage/documents/</code></p>
+      <div class="bg-slate-50 p-4 rounded-lg border border-slate-200 text-slate-700 text-xs leading-relaxed">
+        <h3 class="font-bold text-slate-900 text-sm mb-2">Aegis Corporate IT Security & Compliance Charter 2026</h3>
+        <p class="mb-2">This document verifies that Aegis Global Operations adheres to enterprise access control standards and automated logging policies. All inbound HTTP requests to internal endpoints are retained in the SIEM for forensic auditing.</p>
+        <p class="text-slate-500 font-mono text-[11px]">Storage Root: /var/www/portal/storage/documents/</p>
       </div>
     `;
   }
 
-  // --- 3. SSO LOGIN (SQL Injection Auth Bypass) ---
+  // --- 3. LOGIN VIEW (SQLi Auth Bypass & 401 Logs) ---
   renderLoginView() {
     return `
-      <div class="max-w-md mx-auto my-6 space-y-5">
-        <div class="bg-slate-900 p-6 rounded-xl border border-slate-800 shadow-2xl space-y-5">
+      <div class="max-w-md mx-auto my-6 space-y-6">
+        <div class="bg-white p-7 rounded-xl border border-slate-200 shadow-sm space-y-5">
           <div class="text-center space-y-1">
-            <div class="inline-flex items-center justify-center w-11 h-11 rounded-lg bg-emerald-950 text-emerald-400 border border-emerald-800 mb-2">
+            <div class="inline-flex items-center justify-center w-11 h-11 rounded-lg bg-blue-50 text-blue-600 border border-blue-200 mb-2">
               <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
             </div>
-            <h2 class="text-base font-bold text-white">Employee Identity Access Management</h2>
-            <p class="text-xs text-slate-400">Authenticate using enterprise credentials to access protected management APIs.</p>
+            <h2 class="text-base font-bold text-slate-900">Corporate Single Sign-On (SSO)</h2>
+            <p class="text-xs text-slate-500">Sign in with your corporate ID to access protected internal resources.</p>
           </div>
 
-          <form id="target-login-form" class="space-y-4">
+          <form id="webapp-login-form" class="space-y-4">
             <div>
-              <label class="block text-xs font-mono text-slate-300 mb-1">Corporate ID / Username</label>
+              <label class="block text-xs font-semibold text-slate-700 mb-1">Corporate ID / Username</label>
               <input 
                 type="text" 
-                id="login-username" 
+                id="webapp-login-user" 
                 placeholder="e.g. sec_admin" 
-                class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-100 font-mono focus:outline-none focus:border-emerald-500"
+                class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs text-slate-900 font-mono focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 shadow-sm"
                 required
               />
             </div>
 
             <div>
-              <label class="block text-xs font-mono text-slate-300 mb-1">Password</label>
+              <label class="block text-xs font-semibold text-slate-700 mb-1">Password</label>
               <input 
                 type="password" 
-                id="login-password" 
+                id="webapp-login-pass" 
                 placeholder="Enter password" 
-                class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-100 font-mono focus:outline-none focus:border-emerald-500"
+                class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs text-slate-900 font-mono focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 shadow-sm"
                 required
               />
             </div>
 
-            <div id="login-feedback-box" class="hidden text-xs p-3 rounded-lg font-mono"></div>
+            <div id="webapp-login-feedback" class="hidden text-xs p-3 rounded-lg font-mono"></div>
 
-            <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-medium py-2.5 rounded-lg text-xs transition-all shadow-md">
-              Sign In
+            <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 rounded-lg text-xs transition-all shadow-sm">
+              Sign In to Employee Portal
             </button>
           </form>
 
-          <div class="pt-3 border-t border-slate-800 text-center">
-            <span class="text-[11px] text-slate-500 font-mono">Telemetry: POST /auth/login</span>
+          <div class="pt-3 border-t border-slate-200 text-center">
+            <span class="text-[11px] text-slate-400 font-mono">Monitored Endpoint: POST /auth/login</span>
           </div>
         </div>
       </div>
     `;
   }
 
-  // --- 4. SUPPORT & FEEDBACK (Stored XSS) ---
-  renderSupportView() {
-    return `
-      <div class="max-w-4xl mx-auto space-y-5">
-        <div class="bg-slate-900 p-6 rounded-xl border border-slate-800 shadow-xl space-y-4">
-          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-            <div>
-              <h2 class="text-lg font-bold text-white">Internal IT Support Ticket System</h2>
-              <p class="text-xs text-slate-400">Report infrastructure issues to internal systems engineering.</p>
-            </div>
-            <span class="text-[11px] font-mono text-cyan-400 bg-cyan-950/60 border border-cyan-800/80 px-2.5 py-1 rounded-md self-start">
-              Endpoint: POST /api/tickets
-            </span>
-          </div>
-
-          <form id="support-ticket-form" class="space-y-3">
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label class="block text-xs font-mono text-slate-300 mb-1">Employee Email</label>
-                <input 
-                  type="email" 
-                  id="ticket-email" 
-                  value="operator@aegiscorp.internal" 
-                  class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-100 font-mono focus:outline-none focus:border-emerald-500"
-                  required
-                />
-              </div>
-              <div>
-                <label class="block text-xs font-mono text-slate-300 mb-1">Ticket Subject</label>
-                <input 
-                  type="text" 
-                  id="ticket-subject" 
-                  placeholder="Brief summary of request" 
-                  class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-100 font-mono focus:outline-none focus:border-emerald-500"
-                  required
-                />
-              </div>
-            </div>
-
-            <div>
-              <label class="block text-xs font-mono text-slate-300 mb-1">Issue Description</label>
-              <textarea 
-                id="ticket-details" 
-                rows="3" 
-                placeholder="Provide incident or inquiry details..." 
-                class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-100 font-mono focus:outline-none focus:border-emerald-500"
-                required
-              ></textarea>
-            </div>
-
-            <button type="submit" class="bg-emerald-600 hover:bg-emerald-500 text-white font-medium px-4 py-2 rounded-lg text-xs transition-all">
-              Submit Ticket (POST)
-            </button>
-          </form>
-        </div>
-
-        <!-- Open Tickets Table -->
-        <div class="bg-slate-900 rounded-xl border border-slate-800 p-5 space-y-3">
-          <h3 class="text-xs font-bold text-white font-mono uppercase tracking-wider">Recently Logged Support Tickets</h3>
-          <div class="space-y-2" id="ticket-feed">
-            ${this.renderTicketList()}
-          </div>
-        </div>
-      </div>
-    `;
-  }
-
-  renderTicketList() {
-    return this.tickets.map(t => `
-      <div class="bg-slate-950 p-3 rounded-lg border border-slate-800 text-xs font-mono flex items-start justify-between gap-3">
-        <div>
-          <div class="flex items-center gap-2 mb-1">
-            <span class="text-cyan-400 font-bold">${escapeHtml(t.id)}</span>
-            <span class="text-slate-400 text-[11px]">${escapeHtml(t.user)}</span>
-            <span class="text-slate-500 text-[10px]">${escapeHtml(t.date)}</span>
-          </div>
-          <div class="text-slate-200">${escapeHtml(t.subject)}</div>
-        </div>
-      </div>
-    `).join('');
-  }
-
-  // --- EVENT BINDING ---
+  // --- BIND EVENTS ---
   bindEvents() {
-    const navDir = document.getElementById('nav-directory');
-    const navDoc = document.getElementById('nav-documents');
-    const navLog = document.getElementById('nav-login');
-    const navSup = document.getElementById('nav-support');
+    const navSearch = document.getElementById('webapp-nav-search');
+    const navDocs = document.getElementById('webapp-nav-docs');
+    const navLogin = document.getElementById('webapp-nav-login');
 
-    if (navDir) navDir.onclick = () => this.setView('directory');
-    if (navDoc) navDoc.onclick = () => this.setView('documents');
-    if (navLog) navLog.onclick = () => this.setView('login');
-    if (navSup) navSup.onclick = () => this.setView('support');
+    if (navSearch) navSearch.onclick = () => this.setView('search');
+    if (navDocs) navDocs.onclick = () => this.setView('documents');
+    if (navLogin) navLogin.onclick = () => this.setView('login');
 
-    if (this.currentView === 'directory') this.bindDirectoryEvents();
+    if (this.currentView === 'search') this.bindSearchEvents();
     if (this.currentView === 'documents') this.bindDocumentsEvents();
     if (this.currentView === 'login') this.bindLoginEvents();
-    if (this.currentView === 'support') this.bindSupportEvents();
   }
 
-  // --- DIRECTORY SEARCH LOGIC (SQLi & Reflected XSS) ---
-  bindDirectoryEvents() {
-    const form = document.getElementById('asset-search-form');
-    const input = document.getElementById('asset-search-input');
+  // --- SEARCH BAR EVENTS (SQLi & Reflected XSS) ---
+  bindSearchEvents() {
+    const form = document.getElementById('webapp-search-form');
+    const input = document.getElementById('webapp-search-input');
 
     if (form) {
       form.onsubmit = (e) => {
@@ -430,28 +317,29 @@ class TargetApp {
         const lower = query.toLowerCase();
         let status = 200;
 
-        // Check if single quote causes database syntax error
+        // Check if single quote causes database syntax error (HTTP 500)
         if (query.includes("'") && !lower.includes('union') && !lower.includes('or')) {
           status = 500;
         }
 
-        // Ingest real HTTP GET log into SIEM with exact timestamp
+        // Ingest real HTTP GET log into SIEM
         logEngine.ingest({
-          client_ip: '203.0.113.195',
+          client_ip: this.clientIp,
           method: 'GET',
           uri: '/api/search',
           query_params: { q: query },
           status: status,
+          referer: `https://${this.hostDomain}/search`,
           user_agent: navigator.userAgent
         });
 
-        this.processDirectoryQuery(query, status);
+        this.processSearchQuery(query, status);
       };
     }
   }
 
-  processDirectoryQuery(query, status) {
-    const resultsArea = document.getElementById('asset-results-area');
+  processSearchQuery(query, status) {
+    const resultsArea = document.getElementById('webapp-search-results');
     if (!resultsArea) return;
 
     const lower = query.toLowerCase();
@@ -460,31 +348,31 @@ class TargetApp {
     if (lower.includes('<script>') || lower.includes('onerror=') || lower.includes('<svg') || lower.includes('onload=')) {
       this.triggerXssAlert(query);
       resultsArea.innerHTML = `
-        <div class="bg-amber-950/20 border border-amber-600/50 p-4 rounded-xl text-amber-200 space-y-2">
-          <div class="font-bold flex items-center gap-2">
+        <div class="bg-amber-50 border border-amber-300 p-4 rounded-xl text-amber-900 space-y-2">
+          <div class="font-bold flex items-center gap-2 text-sm text-amber-800">
             ⚠️ Reflection in Document Object Model:
           </div>
-          <div class="font-mono text-xs bg-slate-950 p-3 rounded border border-amber-800 break-all">
+          <div class="font-mono text-xs bg-white p-3 rounded border border-amber-200 break-all text-amber-800">
             Query string: ${escapeHtml(query)}
           </div>
-          <p class="text-xs text-amber-300">The application reflected your search term into the DOM without sanitization.</p>
+          <p class="text-xs text-amber-700">The application reflected the input into the client DOM without HTML entity encoding.</p>
         </div>
       `;
       return;
     }
 
-    // 2. SQLi Database Error (500)
+    // 2. SQLi Database Error (HTTP 500)
     if (status === 500) {
       sfx.playError();
       showToast("HTTP 500 Internal Server Error (Database Exception)", "error");
       resultsArea.innerHTML = `
-        <div class="bg-rose-950/30 border border-rose-700/60 p-4 rounded-xl text-rose-200 font-mono text-xs space-y-2">
-          <div class="font-bold text-rose-400">Server Error: 500 Internal Server Error</div>
-          <div class="bg-slate-950 p-3 rounded border border-rose-900 text-slate-300 select-all">
+        <div class="bg-red-50 border border-red-300 p-5 rounded-xl text-red-900 font-mono text-xs space-y-2">
+          <div class="font-bold text-red-700 text-sm">500 Internal Server Error: Database Syntax Exception</div>
+          <div class="bg-white p-3 rounded border border-red-200 text-slate-800 select-all leading-relaxed">
             org.postgresql.util.PSQLException: ERROR: syntax error at or near "'"<br>
             LINE 1: SELECT * FROM assets WHERE name ILIKE '%${escapeHtml(query)}%'
           </div>
-          <p class="text-slate-400 text-[11px]">Database error captured and recorded in SIEM access log.</p>
+          <p class="text-slate-500 text-[11px] font-sans">Database error trace logged directly to SOC SIEM monitor.</p>
         </div>
       `;
       return;
@@ -493,20 +381,20 @@ class TargetApp {
     // 3. SQLi UNION SELECT Data Exfiltration
     if (lower.includes('union') && lower.includes('select')) {
       sfx.playSuccess();
-      showToast("SQL Injection: UNION SELECT executed!", "success");
+      showToast("SQL Injection Succeeded! Data exfiltrated.", "success");
       resultsArea.innerHTML = `
-        <div class="bg-slate-900 border border-emerald-500/60 rounded-xl p-5 shadow-2xl space-y-4">
-          <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <div class="bg-white border-2 border-emerald-500 rounded-xl p-5 shadow-sm space-y-4">
+          <div class="flex items-center justify-between border-b border-slate-200 pb-3">
             <div>
-              <span class="text-xs font-mono text-emerald-400 bg-emerald-950 px-2 py-0.5 rounded border border-emerald-800">UNION Query Succeeded</span>
-              <h3 class="text-base font-bold text-white mt-1">Exfiltrated Database Table: <code class="text-cyan-400">users</code></h3>
+              <span class="text-xs font-mono text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">UNION Query Succeeded</span>
+              <h3 class="text-base font-bold text-slate-900 mt-1">Exfiltrated Database Table: <code class="text-blue-600">users</code></h3>
             </div>
-            <span class="text-xs text-slate-400 font-mono">3 records leaked</span>
+            <span class="text-xs text-slate-500 font-mono">3 records leaked</span>
           </div>
 
           <div class="overflow-x-auto">
             <table class="w-full text-left font-mono text-xs">
-              <thead class="bg-slate-950 text-slate-400 border-b border-slate-800">
+              <thead class="bg-slate-50 text-slate-600 border-b border-slate-200">
                 <tr>
                   <th class="p-2.5">ID</th>
                   <th class="p-2.5">Username</th>
@@ -515,57 +403,47 @@ class TargetApp {
                   <th class="p-2.5">Role</th>
                 </tr>
               </thead>
-              <tbody class="divide-y divide-slate-800 text-slate-200">
-                <tr class="bg-emerald-950/30 text-emerald-300">
+              <tbody class="divide-y divide-slate-100 text-slate-700">
+                <tr class="bg-emerald-50 text-emerald-900">
                   <td class="p-2.5 font-bold">1</td>
                   <td class="p-2.5 font-bold">sec_admin</td>
-                  <td class="p-2.5">BLITZ{5ql1_3xf1ltr4t10n_k9x27p4}</td>
-                  <td class="p-2.5">admin@aegiscorp.internal</td>
-                  <td class="p-2.5 font-bold text-white">Global Administrator</td>
+                  <td class="p-2.5 font-bold text-emerald-700">BLITZ{5ql1_3xf1ltr4t10n_k9x27p4}</td>
+                  <td class="p-2.5">admin@aegis-corp.com</td>
+                  <td class="p-2.5 font-bold">Global Administrator</td>
                 </tr>
                 <tr>
                   <td class="p-2.5">2</td>
                   <td class="p-2.5">svc_backup</td>
                   <td class="p-2.5">$2y$12$N9qo8uLOickgx2...</td>
-                  <td class="p-2.5">backup@aegiscorp.internal</td>
+                  <td class="p-2.5">backup@aegis-corp.com</td>
                   <td class="p-2.5">Service Account</td>
                 </tr>
                 <tr>
                   <td class="p-2.5">3</td>
                   <td class="p-2.5">audit_officer</td>
                   <td class="p-2.5">$2y$12$mKx31PzQ991v...</td>
-                  <td class="p-2.5">compliance@aegiscorp.internal</td>
+                  <td class="p-2.5">compliance@aegis-corp.com</td>
                   <td class="p-2.5">Security Auditor</td>
                 </tr>
               </tbody>
             </table>
           </div>
-          <div class="text-[11px] text-slate-400 font-mono">
-            Full GET query exfiltration logged to SIEM telemetry.
+          <div class="text-[11px] text-slate-500 font-mono">
+            Recorded in access log of https://${this.hostDomain}.
           </div>
         </div>
       `;
       return;
     }
 
-    // Default regular search
-    resultsArea.innerHTML = this.getStandardDirectoryHTML();
+    // Default table
+    resultsArea.innerHTML = this.getStandardAssetTable();
   }
 
-  // --- DOCUMENTS LOGIC (Directory Traversal / Path Traversal) ---
+  // --- DOCUMENT CENTER EVENTS (Directory Traversal) ---
   bindDocumentsEvents() {
-    const form = document.getElementById('doc-fetch-form');
-    const input = document.getElementById('doc-file-input');
-    const sampleBtns = document.querySelectorAll('.btn-sample-doc');
-
-    sampleBtns.forEach(btn => {
-      btn.onclick = () => {
-        if (input) {
-          input.value = btn.getAttribute('data-doc');
-          form.dispatchEvent(new Event('submit', { cancelable: true }));
-        }
-      };
-    });
+    const form = document.getElementById('webapp-doc-form');
+    const input = document.getElementById('webapp-doc-input');
 
     if (form) {
       form.onsubmit = (e) => {
@@ -578,11 +456,12 @@ class TargetApp {
 
         // Ingest real HTTP GET log into SIEM
         logEngine.ingest({
-          client_ip: '203.0.113.195',
+          client_ip: this.clientIp,
           method: 'GET',
           uri: '/api/documents',
           query_params: { file: filepath },
           status: status,
+          referer: `https://${this.hostDomain}/documents`,
           user_agent: navigator.userAgent
         });
 
@@ -592,7 +471,7 @@ class TargetApp {
   }
 
   processDocumentFetch(filepath) {
-    const previewArea = document.getElementById('doc-preview-area');
+    const previewArea = document.getElementById('webapp-doc-preview');
     if (!previewArea) return;
 
     const lower = filepath.toLowerCase();
@@ -600,13 +479,13 @@ class TargetApp {
     // 1. Directory Traversal targeting /etc/passwd
     if (lower.includes('etc/passwd') || lower.includes('etc%2fpasswd')) {
       sfx.playAlert();
-      showToast("Directory Traversal: /etc/passwd leaked!", "warning");
+      showToast("Directory Traversal: /etc/passwd exposed!", "warning");
       previewArea.innerHTML = `
-        <div class="flex items-center justify-between border-b border-slate-800 pb-2.5">
-          <span class="text-amber-400 font-bold">⚠️ Traversal Success: /etc/passwd</span>
-          <span class="text-emerald-400 text-[11px]">HTTP 200 OK</span>
+        <div class="flex items-center justify-between border-b border-slate-200 pb-2.5">
+          <span class="text-amber-700 font-bold text-xs">⚠️ Directory Traversal Success: /etc/passwd</span>
+          <span class="text-emerald-700 text-xs font-semibold bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">HTTP 200 OK</span>
         </div>
-        <pre class="bg-slate-950 p-4 rounded-lg border border-slate-800 text-amber-300 font-mono text-xs overflow-x-auto select-all">
+        <pre class="bg-slate-900 text-amber-300 p-4 rounded-lg font-mono text-xs overflow-x-auto select-all">
 root:x:0:0:root:/root:/bin/bash
 daemon:x:1:1:daemon:/usr/sbin:/usr/sbin/nologin
 bin:x:2:2:bin:/bin:/usr/sbin/nologin
@@ -614,43 +493,43 @@ sys:x:3:3:sys:/dev:/usr/sbin/nologin
 sync:x:4:65534:sync:/bin:/bin/sync
 aegis_app:x:1001:1001:Aegis Service:/var/www/portal:/bin/bash
 sec_admin:x:1002:1002:Security Lead:/home/sec_admin:/bin/bash
-postgres:x:104:110:PostgreSQL administrator,,,:/var/lib/postgresql:/bin/bash
+postgres:x:104:110:PostgreSQL admin,,,:/var/lib/postgresql:/bin/bash
         </pre>
       `;
       return;
     }
 
-    // 2. Directory Traversal targeting system configuration/secrets
+    // 2. Directory Traversal targeting internal secrets
     if (lower.includes('secrets.env') || lower.includes('config.env') || lower.includes('.env')) {
       sfx.playSuccess();
-      showToast("Directory Traversal: Sensitive configuration file exposed!", "success");
+      showToast("Directory Traversal: Internal secrets file accessed!", "success");
       previewArea.innerHTML = `
-        <div class="flex items-center justify-between border-b border-slate-800 pb-2.5">
-          <span class="text-emerald-400 font-bold">✓ Traversal Exfiltration: /system/secrets.env</span>
-          <span class="text-emerald-400 text-[11px]">HTTP 200 OK</span>
+        <div class="flex items-center justify-between border-b border-slate-200 pb-2.5">
+          <span class="text-emerald-700 font-bold text-xs">✓ Sensitive File Read: /system/secrets.env</span>
+          <span class="text-emerald-700 text-xs font-semibold bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">HTTP 200 OK</span>
         </div>
-        <pre class="bg-slate-950 p-4 rounded-lg border border-slate-800 text-emerald-300 font-mono text-xs overflow-x-auto select-all">
+        <pre class="bg-slate-900 text-emerald-300 p-4 rounded-lg font-mono text-xs overflow-x-auto select-all leading-relaxed">
 # Aegis Internal System Secrets & Configuration
 NODE_ENV=production
 DATABASE_URL=postgres://pgadmin:SuperSecret2026@10.0.4.12:5432/aegis_db
 JWT_SECRET_SIGNER=0x79a1f4b209e8d1c9
 FLAG_SYSTEM_SECRET=BLITZ{p4th_tr4v3rs4l_f1l3_r34d_8a3d1}
-ALLOWED_ORIGIN=https://portal.aegiscorp.internal
+ALLOWED_ORIGIN=https://portal.aegis-corp.com
         </pre>
       `;
       return;
     }
 
     // Default regular document
-    previewArea.innerHTML = this.getStandardDocumentPreviewHTML(filepath);
+    previewArea.innerHTML = this.getStandardDocumentPreview(filepath);
   }
 
   // --- LOGIN EVENTS ---
   bindLoginEvents() {
-    const form = document.getElementById('target-login-form');
-    const uInput = document.getElementById('login-username');
-    const pInput = document.getElementById('login-password');
-    const fbBox = document.getElementById('login-feedback-box');
+    const form = document.getElementById('webapp-login-form');
+    const uInput = document.getElementById('webapp-login-user');
+    const pInput = document.getElementById('webapp-login-pass');
+    const fbBox = document.getElementById('webapp-login-feedback');
 
     if (form) {
       form.onsubmit = (e) => {
@@ -658,75 +537,30 @@ ALLOWED_ORIGIN=https://portal.aegiscorp.internal
         const username = (uInput.value || '').trim();
         const password = (pInput.value || '').trim();
 
-        // SQLi Auth Bypass: ' OR '1'='1 or admin' --
         const isSqliBypass = password.includes("'") && (password.toLowerCase().includes('or') || password.includes('--'));
-        const status = isSqliBypass ? 302 : 401;
+        const isValid = username.toLowerCase() === 'sec_admin' && password === 'Summer2026!';
+        const status = (isSqliBypass || isValid) ? 302 : 401;
 
         // Ingest real HTTP POST log with actual request body
         logEngine.ingest({
-          client_ip: '203.0.113.195',
+          client_ip: this.clientIp,
           method: 'POST',
           uri: '/auth/login',
           body: `username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}`,
           status: status,
+          referer: `https://${this.hostDomain}/login`,
           user_agent: navigator.userAgent
         });
 
-        if (isSqliBypass) {
-          fbBox.className = "text-xs p-3 rounded-lg font-mono bg-emerald-950 text-emerald-300 border border-emerald-700 block";
-          fbBox.innerHTML = `<strong>✓ Authentication Bypassed via SQL Injection!</strong> Session established for user '${escapeHtml(username)}'.`;
+        if (isSqliBypass || isValid) {
+          fbBox.className = "text-xs p-3 rounded-lg font-mono bg-emerald-50 text-emerald-800 border border-emerald-300 block";
+          fbBox.innerHTML = `<strong>✓ Authentication Successful (HTTP 302)!</strong> Session established for user '${escapeHtml(username)}'.`;
           sfx.playSuccess();
         } else {
-          fbBox.className = "text-xs p-3 rounded-lg font-mono bg-rose-950 text-rose-300 border border-rose-800 block";
-          fbBox.innerHTML = `<strong>✕ 401 Unauthorized:</strong> Invalid credentials. Attempt logged to audit trail.`;
+          fbBox.className = "text-xs p-3 rounded-lg font-mono bg-red-50 text-red-800 border border-red-300 block";
+          fbBox.innerHTML = `<strong>✕ 401 Unauthorized:</strong> Invalid credentials for '${escapeHtml(username)}'. Attempt logged to audit trail.`;
           sfx.playError();
         }
-      };
-    }
-  }
-
-  // --- SUPPORT TICKET EVENTS (Stored XSS) ---
-  bindSupportEvents() {
-    const form = document.getElementById('support-ticket-form');
-    const emailInput = document.getElementById('ticket-email');
-    const subjInput = document.getElementById('ticket-subject');
-    const detailsInput = document.getElementById('ticket-details');
-
-    if (form) {
-      form.onsubmit = (e) => {
-        e.preventDefault();
-        const email = (emailInput.value || '').trim();
-        const subj = (subjInput.value || '').trim();
-        const details = (detailsInput.value || '').trim();
-
-        // Log POST to SIEM
-        logEngine.ingest({
-          client_ip: '203.0.113.195',
-          method: 'POST',
-          uri: '/api/tickets',
-          body: `email=${encodeURIComponent(email)}&subject=${encodeURIComponent(subj)}&details=${encodeURIComponent(details)}`,
-          status: 201,
-          user_agent: navigator.userAgent
-        });
-
-        this.tickets.unshift({
-          id: `TCK-${Math.floor(Math.random() * 800 + 1050)}`,
-          user: email,
-          subject: subj,
-          date: 'Just now'
-        });
-
-        const feed = document.getElementById('ticket-feed');
-        if (feed) feed.innerHTML = this.renderTicketList();
-
-        if (details.toLowerCase().includes('<script') || details.toLowerCase().includes('onerror=') || subj.toLowerCase().includes('<script')) {
-          this.triggerXssAlert(details || subj);
-        } else {
-          showToast("Ticket submitted successfully (POST logged).", "success");
-        }
-
-        subjInput.value = '';
-        detailsInput.value = '';
       };
     }
   }
@@ -734,27 +568,27 @@ ALLOWED_ORIGIN=https://portal.aegiscorp.internal
   triggerXssAlert(payload) {
     sfx.playAlert();
     const modal = document.createElement('div');
-    modal.className = "fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-sm";
+    modal.className = "fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm";
     modal.innerHTML = `
-      <div class="bg-slate-900 border-2 border-amber-500 rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4 font-mono text-xs">
-        <div class="flex items-center gap-3 text-amber-400">
+      <div class="bg-white border-2 border-amber-500 rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4 font-mono text-xs">
+        <div class="flex items-center gap-3 text-amber-600">
           <svg class="w-6 h-6 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
-          <span class="font-bold text-sm text-white">Browser Security Sandbox: Script Execution</span>
+          <span class="font-bold text-sm text-slate-900 font-sans">Browser Security Context: JavaScript Executed</span>
         </div>
-        <div class="bg-slate-950 p-3 rounded-lg border border-slate-800 text-slate-300">
+        <div class="bg-slate-50 p-3 rounded-lg border border-slate-200 text-slate-700">
           <span class="text-slate-500 block mb-1">Executed Payload:</span>
-          <div class="text-amber-300 break-all font-bold">${escapeHtml(payload)}</div>
+          <div class="text-amber-700 break-all font-bold">${escapeHtml(payload)}</div>
         </div>
-        <div class="bg-slate-950 p-3 rounded-lg border border-slate-800 text-slate-300">
+        <div class="bg-slate-50 p-3 rounded-lg border border-slate-200 text-slate-700">
           <span class="text-slate-500 block mb-1">Exposed Session Token:</span>
-          <div class="text-cyan-400 break-all">eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...</div>
+          <div class="text-blue-700 break-all">eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...</div>
         </div>
-        <div class="bg-emerald-950/60 p-3 rounded-lg border border-emerald-600 text-emerald-300">
+        <div class="bg-emerald-50 p-3 rounded-lg border border-emerald-300 text-emerald-900">
           <span class="font-bold block mb-1">Challenge Flag:</span>
-          <div class="text-emerald-400 font-bold select-all">BLITZ{x55_d0m_3x3cut10n_9c417e2}</div>
+          <div class="text-emerald-700 font-bold select-all">BLITZ{x55_d0m_3x3cut10n_9c417e2}</div>
         </div>
-        <button type="button" class="close-xss-btn w-full bg-slate-800 hover:bg-slate-700 text-white font-bold py-2 rounded-lg transition-all">
-          Dismiss & View Telemetry in SIEM
+        <button type="button" class="close-xss-btn w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-2 rounded-lg transition-all font-sans text-xs">
+          Dismiss & View Telemetry in SOC SIEM
         </button>
       </div>
     `;
