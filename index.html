@@ -128,21 +128,22 @@
           </h4>
           <ol class="list-decimal list-inside space-y-2 leading-relaxed">
             <li>
-              <strong>SQL Injection Attack:</strong> Go to <span class="text-cyan-400">Target Application -> Catalog Search</span>. Try the payload:
-              <br><code class="bg-slate-950 text-amber-300 px-2 py-1 rounded block my-1 font-mono select-all">' UNION SELECT 1,username,password,email,role FROM users--</code>
-              This extracts the hidden user database and displays the admin secret flag! Then switch to the <span class="text-cyan-400">SOC SIEM Console</span> to view the generated HTTP GET log with decoded SQL keywords.
+              <strong>SQL Injection Attack:</strong> Go to <span class="text-cyan-400">Target Application -> Asset Directory</span>. Test broken syntax with <code>'</code> (observe the 500 database error), then extract the user table using:
+              <br><code class="bg-slate-950 text-amber-300 px-2 py-1 rounded block my-1 font-mono select-all">' UNION SELECT 1,username,password_hash,email,role FROM users--</code>
+              This exfiltrates the database users table revealing the admin flag: <strong class="text-emerald-400">BLITZ{5ql1_3xf1ltr4t10n_k9x27p4}</strong>. Switch to the <span class="text-cyan-400">SOC SIEM Console</span> to view the generated HTTP GET log.
             </li>
             <li>
-              <strong>Cross-Site Scripting (XSS) Attack:</strong> In either <span class="text-cyan-400">Catalog Search</span> (Reflected) or <span class="text-cyan-400">Feedback Board</span> (Stored), submit:
+              <strong>Directory Traversal Attack:</strong> Go to <span class="text-cyan-400">Target Application -> Document Center</span>. Try path traversal sequences in the filename input to escape the web root:
+              <br><code class="bg-slate-950 text-amber-300 px-2 py-1 rounded block my-1 font-mono select-all">../../../../system/secrets.env</code>
+              This reveals the internal server environment file containing: <strong class="text-emerald-400">BLITZ{p4th_tr4v3rs4l_f1l3_r34d_8a3d1}</strong>. Also test <code>../../../../etc/passwd</code> and inspect the resulting SIEM logs.
+            </li>
+            <li>
+              <strong>Cross-Site Scripting (XSS) Attack:</strong> In either <span class="text-cyan-400">Asset Directory</span> (Reflected) or <span class="text-cyan-400">Support</span> (Stored), submit a JavaScript payload:
               <br><code class="bg-slate-950 text-amber-300 px-2 py-1 rounded block my-1 font-mono select-all">&lt;script&gt;alert('XSS')&lt;/script&gt;</code>
-              Observe the execution modal revealing the XSS flag, and inspect the resulting log in the SIEM.
+              Observe the script execution in the browser revealing Flag: <strong class="text-emerald-400">BLITZ{x55_d0m_3x3cut10n_9c417e2}</strong>, and inspect the logged raw URL encodings (<code>%3C</code>) in the SIEM console.
             </li>
             <li>
-              <strong>Authentication Brute Force Attack:</strong> Go to <span class="text-cyan-400">Target Application -> Login</span> or <span class="text-cyan-400">Attack Simulator</span>.
-              Click <span class="text-purple-300 font-mono font-bold">"Run Hydra Brute Force Burst"</span>. Watch the stream of 401s followed by the cracked password (<code class="text-emerald-400">dragon123</code>) with status 302!
-            </li>
-            <li>
-              <strong>Inspect Telemetry in SIEM:</strong> Switch to the <span class="text-cyan-400">SOC SIEM Console</span> to filter by IP, status code, or rule, and click <em>"Inspect"</em> on any log to see decoded payloads and forensic breakdowns.
+              <strong>Inspect Telemetry in SIEM:</strong> Switch to the <span class="text-cyan-400">SOC SIEM Console</span> to filter by IP, status code (500, 200, 401), or rule, and click <em>"Inspect"</em> on any log row to review raw vs. decoded payloads.
             </li>
           </ol>
         </div>

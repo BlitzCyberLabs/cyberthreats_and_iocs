@@ -180,6 +180,8 @@ class LogEngine {
     if (category && category !== 'all') {
       if (category === 'sqli') {
         result = result.filter(l => l.category === 'sqli' || (l.matched_rule && l.matched_rule.includes('001') || l.matched_rule?.includes('002')));
+      } else if (category === 'path_traversal') {
+        result = result.filter(l => l.category === 'path_traversal' || (l.matched_rule && l.matched_rule.includes('006')));
       } else if (category === 'xss') {
         result = result.filter(l => l.category === 'xss' || (l.matched_rule && l.matched_rule.includes('003')));
       } else if (category === 'brute_force') {

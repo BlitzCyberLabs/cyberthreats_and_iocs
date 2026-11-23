@@ -157,7 +157,7 @@ class SocSiem {
                 type="text" 
                 id="siem-search-input" 
                 value="${escapeHtml(store.searchQuery)}"
-                placeholder="Search queries: status:401 | uri:*union* | ip:198.51.100.44 | rule:RULE-SEC-001 | free-text" 
+                placeholder="Search queries: status:500 | uri:*secrets.env* | ip:198.51.100.88 | rule:RULE-SEC-006 | free-text" 
                 class="w-full bg-slate-950 border border-slate-700 rounded-lg pl-9 pr-8 py-2 text-xs font-mono text-slate-200 placeholder-slate-500 focus:outline-none focus:border-emerald-500"
               />
               <svg class="w-4 h-4 text-slate-500 absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
@@ -177,11 +177,11 @@ class SocSiem {
               <button class="filter-pill px-2.5 py-1.5 rounded-lg border transition-all ${store.activeFilterCategory === 'sqli' ? 'bg-cyan-600 text-white border-cyan-500' : 'bg-slate-950 text-cyan-400 border-slate-800 hover:bg-slate-800'}" data-cat="sqli">
                 SQLi
               </button>
+              <button class="filter-pill px-2.5 py-1.5 rounded-lg border transition-all ${store.activeFilterCategory === 'path_traversal' ? 'bg-orange-600 text-white border-orange-500' : 'bg-slate-950 text-orange-400 border-slate-800 hover:bg-slate-800'}" data-cat="path_traversal">
+                Dir Traversal
+              </button>
               <button class="filter-pill px-2.5 py-1.5 rounded-lg border transition-all ${store.activeFilterCategory === 'xss' ? 'bg-amber-600 text-white border-amber-500' : 'bg-slate-950 text-amber-400 border-slate-800 hover:bg-slate-800'}" data-cat="xss">
                 XSS
-              </button>
-              <button class="filter-pill px-2.5 py-1.5 rounded-lg border transition-all ${store.activeFilterCategory === 'brute_force' ? 'bg-purple-600 text-white border-purple-500' : 'bg-slate-950 text-purple-400 border-slate-800 hover:bg-slate-800'}" data-cat="brute_force">
-                Brute Force
               </button>
               <button class="filter-pill px-2.5 py-1.5 rounded-lg border transition-all ${store.activeFilterCategory === 'errors' ? 'bg-red-900 text-white border-red-700' : 'bg-slate-950 text-slate-400 border-slate-800 hover:bg-slate-800'}" data-cat="errors">
                 4xx/5xx Errors
@@ -387,8 +387,8 @@ class SocSiem {
     const categoryCanvas = document.getElementById('siem-category-chart');
     if (categoryCanvas) {
       const sqliCount = logs.filter(l => l.category === 'sqli').length;
+      const traversalCount = logs.filter(l => l.category === 'path_traversal').length;
       const xssCount = logs.filter(l => l.category === 'xss').length;
-      const bruteCount = logs.filter(l => l.category === 'brute_force').length;
       const reconCount = logs.filter(l => l.category === 'recon').length;
       const legitCount = logs.filter(l => l.category === 'legitimate' || !l.category).length;
 
@@ -397,10 +397,10 @@ class SocSiem {
       this.categoryChart = new Chart(categoryCanvas, {
         type: 'doughnut',
         data: {
-          labels: ['SQL Injection', 'Cross-Site Scripting', 'Brute Force', 'Recon / Scanner', 'Legitimate'],
+          labels: ['SQL Injection', 'Directory Traversal', 'Cross-Site Scripting', 'Recon / Scanner', 'Legitimate'],
           datasets: [{
-            data: [sqliCount, xssCount, bruteCount, reconCount, legitCount],
-            backgroundColor: ['#06b6d4', '#f59e0b', '#ec4899', '#a855f7', '#10b981'],
+            data: [sqliCount, traversalCount, xssCount, reconCount, legitCount],
+            backgroundColor: ['#06b6d4', '#f97316', '#f59e0b', '#a855f7', '#10b981'],
             borderColor: '#0f172a',
             borderWidth: 2
           }]

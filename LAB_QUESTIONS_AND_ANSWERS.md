@@ -1,167 +1,129 @@
 # 🛡️ SOC Analyst Lab: Web Attack Forensics & IoC Hunting
-## Official Question Bank, Hints & Final Answers Key
+## Official Question Bank, Hints & Final Answers Key (8 Questions)
 
 ---
 
 ## 📋 Table of Contents
 1. [Part 1: Quick Walkthrough - How to Perform the Lab](#part-1-quick-walkthrough---how-to-perform-the-lab)
-2. [Part 2: Questions, Hints & Final Answers](#part-2-questions-hints--final-answers)
-   - [Section 1: Web Log Fundamentals](#section-1-web-log-fundamentals)
-   - [Section 2: SQL Injection Forensics](#section-2-sql-injection-forensics)
-   - [Section 3: Cross-Site Scripting (XSS) Forensics](#section-3-cross-site-scripting-xss-forensics)
-   - [Section 4: Authentication Brute Force Forensics](#section-4-authentication-brute-force-forensics)
-   - [Section 5: Capstone Threat Actor Incident Investigation](#section-5-capstone-threat-actor-incident-investigation)
+2. [Part 2: Official Questions, Hints & Final Answers](#part-2-official-questions-hints--final-answers)
+   - [Question 1: SQL Injection Execution](#question-1-sql-injection-execution)
+   - [Question 2: SQL Injection Web Log Forensics](#question-2-sql-injection-web-log-forensics)
+   - [Question 3: Directory Traversal Execution](#question-3-directory-traversal-execution)
+   - [Question 4: Directory Traversal Web Log Forensics](#question-4-directory-traversal-web-log-forensics)
+   - [Question 5: Cross-Site Scripting Execution](#question-5-cross-site-scripting-execution)
+   - [Question 6: Cross-Site Scripting Web Log Forensics](#question-6-cross-site-scripting-web-log-forensics)
+   - [Question 7: Threat Actor IP Identification](#question-7-threat-actor-ip-identification)
+   - [Question 8: Security Remediation & Defense](#question-8-security-remediation--defense)
 3. [Part 3: Master Flags Summary](#part-3-master-flags-summary)
 
 ---
 
 ## Part 1: Quick Walkthrough - How to Perform the Lab
 
-### 1. SQL Injection Attack & Detection
-1. In the **Target Application**, navigate to **"🔍 Catalog & Search"**.
-2. Enter the union-based SQL injection query into the search box:
+### 1. Attack 1: SQL Injection (SQLi)
+1. Open the **Target Application** tab and navigate to **"🏢 Asset Directory"**.
+2. Test for error-based vulnerability by entering a single quote: `'`. Notice the application returns an unhandled `HTTP 500 Internal Server Error` revealing PostgreSQL syntax details.
+3. Perform data exfiltration using a UNION query:
    ```sql
-   ' UNION SELECT 1,username,password,email,role FROM users--
+   ' UNION SELECT 1,username,password_hash,email,role FROM users--
    ```
-3. The catalog dumps the hidden user accounts table, displaying admin credentials and Flag #1:
-   **`BLITZ{5ql1_un10n_d8_3xf1l_9f82c4a17e}`**
-4. Switch to the **SOC SIEM Console** and search for `status:500` or `uri:*union*`.
-5. Click **"Inspect"** on the generated log row to view the raw URL-encoded single quote (`%27`), the decoded SQL keywords, and the IoC detection details.
+4. The leaked database table displays the admin secret key and Flag #1:
+   **`BLITZ{5ql1_3xf1ltr4t10n_k9x27p4}`**
+5. Switch to the **SOC SIEM Console**, filter by `status:500` or `category:sqli`, and click **"Inspect"** to analyze the logged query parameters and URL encoding `%27`.
 
 ---
 
-### 2. Cross-Site Scripting (XSS) Attack & Detection
-1. In the **Target Application**, go to **"🔍 Catalog & Search"** (Reflected XSS) or **"💬 Feedback Board"** (Stored XSS).
-2. Enter the script payload:
+### 2. Attack 2: Directory Traversal (Path Traversal / LFI)
+1. In the **Target Application**, navigate to **"📁 Document Center"**.
+2. The application fetches files via `/api/documents?file=...`.
+3. Test escaping the document root to access the internal system secrets file:
+   ```text
+   ../../../../system/secrets.env
+   ```
+4. The server returns the configuration file exposing Flag #2:
+   **`BLITZ{p4th_tr4v3rs4l_f1l3_r34d_8a3d1}`**
+5. Also test accessing `/etc/passwd`:
+   ```text
+   ../../../../etc/passwd
+   ```
+6. Switch to the **SOC SIEM Console**, filter by `category:path_traversal` or `rule:RULE-SEC-006`, and inspect the raw dot-dot-slash (`../`) path traversal sequences.
+
+---
+
+### 3. Attack 3: Cross-Site Scripting (XSS)
+1. In the **Target Application**, go to **"Asset Directory"** (Reflected XSS) or **"Support"** (Stored XSS).
+2. Submit an executable script payload:
    ```html
    <script>alert('XSS')</script>
    ```
-3. Submit the search or feedback comment.
-4. A sandbox pop-up triggers, displaying simulated cookie exposure and Flag #2:
-   **`BLITZ{x55_cl13nt_3x3c_7b39d104fa}`**
-5. In the **SOC SIEM Console**, filter by `category:xss` or `rule:RULE-SEC-003` to observe URL-encoded brackets (`%3C` and `%3E`), and check log `log-017` to find the attacker's external C2 domain (`http://evil-c2.attacker.com/steal`).
+3. The browser security sandbox executes the script and reveals Flag #3:
+   **`BLITZ{x55_d0m_3x3cut10n_9c417e2}`**
+4. In the **SOC SIEM Console**, filter by `category:xss` and inspect the raw URL percent encoding `%3C` for the opening script tag bracket.
 
 ---
 
-### 3. Authentication Brute Force Attack & Detection
-1. In the **Target Application**, navigate to the **"🔐 Login Portal"**.
-2. Click the **"Hydra Burst"** button (or use the **"⚡ Attack Simulator"**).
-3. The simulator issues 24 consecutive invalid login attempts (returning `401 Unauthorized`), followed by the correct password:
-   * **Cracked Password:** `dragon123` (returns `302 Found` and unlocks Flag #3: **`BLITZ{bruf3_4uth_c0mpr0m153_6e1a4d88}`**).
-4. In the **SOC SIEM Console**, observe the spike in the red **401 Unauthorized** bar on the timeline histogram and trace the transition from multiple 401s to a single 302.
+## Part 2: Official Questions, Hints & Final Answers
+
+### Question 1: SQL Injection Execution
+Perform a SQL injection attack in the Asset Directory search bar using a UNION-based query to exfiltrate the hidden `users` table. What is the administrative secret flag retrieved from the database?
+* **💡 Hint:** In the Asset Directory search bar, enter `' UNION SELECT 1,username,password_hash,email,role FROM users--` and inspect the leaked administrator record.
+* **🎯 Final Answer:** `BLITZ{5ql1_3xf1ltr4t10n_k9x27p4}`
 
 ---
 
-### 4. Incident Correlation
-1. Filter the SIEM by `ioc:true` to display all security events.
-2. Correlate timestamps and identify the threat actor IP (`198.51.100.72`) targeting the administrative endpoint `/admin/export?table=users_credentials`.
-3. Complete the incident triage to obtain master Flag #4:
-   **`BLITZ{1nc1d3nt_c0rr3l4t10n_89c2e01b}`**
+### Question 2: SQL Injection Web Log Forensics
+When testing input fields for unhandled SQL injection, an unescaped single quote character (`'`) caused the backend database to throw a syntax exception. What HTTP response status code was returned by the server and recorded in the SIEM access logs?
+* **💡 Hint:** Filter the SIEM console for server error status codes in the 5xx range or inspect the log entry generated after submitting an isolated quote `'`.
+* **🎯 Final Answer:** `500` *(also accept: `500 Internal Server Error`)*
 
 ---
 
-## Part 2: Questions, Hints & Final Answers
-
-### Section 1: Web Log Fundamentals
-
-#### Question 1
-Which standard 3-digit HTTP response status code indicates an authentication failure (Unauthorized access) when credentials are invalid or missing?
-* **💡 Hint:** Think of the client error code in the 4xx range returned by web servers when login credentials fail.
-* **🎯 Final Answer:** `401`
-
-#### Question 2
-In the standard NCSA/Apache Combined Log Format, which field comes immediately after the HTTP request line (e.g. `"GET /catalog/search HTTP/1.1"`)?
-* **💡 Hint:** It is the 3-digit numerical code indicating whether the request succeeded (200), failed authentication (401), or errored (500).
-* **🎯 Final Answer:** `status code` *(also accept: `status`, `HTTP status`, `status_code`)*
+### Question 3: Directory Traversal Execution
+Exploit the Document Center endpoint (`/api/documents`) using Directory Traversal path escape sequences to read the protected server configuration file (`/system/secrets.env`). What secret flag is exposed inside?
+* **💡 Hint:** Enter `../../../../system/secrets.env` into the Document Center file input to traverse up from the storage root.
+* **🎯 Final Answer:** `BLITZ{p4th_tr4v3rs4l_f1l3_r34d_8a3d1}`
 
 ---
 
-### Section 2: SQL Injection Forensics
-
-#### Question 3
-What is the two-character hexadecimal URL percent encoding for a single quotation mark (`'`), commonly seen in access logs when attackers break SQL query strings?
-* **💡 Hint:** In the ASCII table, single quote (') is character 39 in decimal, which equals hex 27. It is prefixed with a percent sign in URLs.
-* **🎯 Final Answer:** `%27`
-
-#### Question 4
-Exploit the SQL Injection vulnerability in the Target Application catalog search using a `UNION SELECT` query. What secret challenge flag is retrieved from the leaked administrator database record?
-* **💡 Hint:** In the Target Application, enter `' UNION SELECT 1,username,password,email,role FROM users--` into the catalog search bar.
-* **🎯 Final Answer:** `BLITZ{5ql1_un10n_d8_3xf1l_9f82c4a17e}`
-
-#### Question 5
-In the SOC SIEM logs, search for automated vulnerability scanning activity. What was the source IP address that executed the automated `sqlmap` scan against `/catalog/search`?
-* **💡 Hint:** In the SIEM console search bar, type `sqlmap` or `rule:RULE-SEC-005` and look at the Client IP column.
-* **🎯 Final Answer:** `198.51.100.44`
+### Question 4: Directory Traversal Web Log Forensics
+Inspect the raw URI parameters recorded in the SIEM for your directory traversal request. What standard two-character dot sequence followed by a forward slash is repeated to escape the web document root?
+* **💡 Hint:** In Unix/Linux file system paths, what notation represents traversing to the parent directory?
+* **🎯 Final Answer:** `../` *(also accept: `..%2f`, `..%2F`)*
 
 ---
 
-### Section 3: Cross-Site Scripting (XSS) Forensics
+### Question 5: Cross-Site Scripting Execution
+Inject an XSS payload into the application (via the search bar or support ticket form) that executes JavaScript in the browser context. What challenge flag is displayed upon successful script execution?
+* **💡 Hint:** Enter `<script>alert('XSS')</script>` into the search bar or support ticket description and inspect the sandbox execution pop-up.
+* **🎯 Final Answer:** `BLITZ{x55_d0m_3x3cut10n_9c417e2}`
 
-#### Question 6
-What URL percent-encoded string represents the opening angle bracket (`<`) frequently observed in raw access logs during HTML and script tag injection attacks?
-* **💡 Hint:** In ASCII, the less-than symbol (<) has decimal value 60, which corresponds to hex 3C.
+---
+
+### Question 6: Cross-Site Scripting Web Log Forensics
+In the raw web access logs, web browsers automatically URL-encode special characters. What is the two-character hexadecimal URL percent-encoding for the opening tag bracket (`<`) in the logged XSS request URI?
+* **💡 Hint:** Look at the raw request URI in the SIEM log inspector for the `<script>` tag. In ASCII, character 60 converts to hex 3C.
 * **🎯 Final Answer:** `%3C` *(also accept: `%3c`)*
 
-#### Question 7
-Trigger the Reflected XSS vulnerability in the Target Application search bar with a script alert payload. What challenge flag is displayed in the client-side execution sandbox modal?
-* **💡 Hint:** In the Target Application catalog search bar, enter `<script>alert('XSS')</script>` and press Search.
-* **🎯 Final Answer:** `BLITZ{x55_cl13nt_3x3c_7b39d104fa}`
+---
 
-#### Question 8
-In the SOC SIEM logs, inspect the stored XSS attack targeting the guestbook endpoint (`/board/feedback`). What malicious external C2 domain endpoint was the attacker attempting to exfiltrate session cookies to?
-* **💡 Hint:** Inspect log `log-017` in the SIEM console and examine the decoded `src` attribute inside the injected script tag.
-* **🎯 Final Answer:** `http://evil-c2.attacker.com/steal` *(also accept: `evil-c2.attacker.com/steal`, `http://evil-c2.attacker.com`, `evil-c2.attacker.com`)*
+### Question 7: Threat Actor IP Identification
+Analyze the historical baseline telemetry in the SIEM console. What external source IP address conducted directory traversal reconnaissance by probing the Unix user file `/etc/passwd`?
+* **💡 Hint:** In the SIEM console, search for `passwd` or `rule:RULE-SEC-006` and check the Client IP column.
+* **🎯 Final Answer:** `198.51.100.88`
 
 ---
 
-### Section 4: Authentication Brute Force Forensics
-
-#### Question 9
-What HTTP response status code anomaly in the SIEM timeline histogram serves as the primary behavioral indicator of an ongoing login brute-force attack?
-* **💡 Hint:** Look at the 3-digit status code that spikes sharply on the histogram during high-frequency password guessing.
-* **🎯 Final Answer:** `401` *(also accept: `401 Unauthorized`)*
-
-#### Question 10
-Execute the brute force attack against user `admin` on the Target Application login portal. What is the cracked legitimate password that yields an HTTP 302 redirect?
-* **💡 Hint:** Click "Hydra Burst" on the login page or run the Attack Simulator. Check the attempt that authenticates with status 302.
-* **🎯 Final Answer:** `dragon123`
-
-#### Question 11
-What challenge flag is unlocked upon successfully authenticating as `admin` on the Target Application login portal?
-* **💡 Hint:** Log into the Target Application using username `admin` and password `dragon123` (or inject SQLi bypass `' OR '1'='1`) and read the success message.
-* **🎯 Final Answer:** `BLITZ{bruf3_4uth_c0mpr0m153_6e1a4d88}`
-
-#### Question 12
-In the SOC SIEM baseline logs, an attacker conducted an automated brute force attack against the account `sarah_admin`. What was the attacker's source IP address?
-* **💡 Hint:** In the SIEM search bar, search for `sarah_admin`. Find the IP that issued 34 consecutive 401 attempts before a single 302 redirect.
-* **🎯 Final Answer:** `203.0.113.89`
-
----
-
-### Section 5: Capstone Threat Actor Incident Investigation
-
-#### Question 13
-Identify the external threat actor IP address responsible for the multi-stage attack involving XSS injection and administrative data export?
-* **💡 Hint:** Filter the SIEM by `category:xss` or inspect logs `log-015` through `log-018` to identify the common source IP address.
-* **🎯 Final Answer:** `198.51.100.72`
-
-#### Question 14
-What sensitive database table name was targeted in the attacker's unauthorized `GET /admin/export` request?
-* **💡 Hint:** Inspect log `log-018` in the SIEM console and examine the `table` parameter in the decoded query string.
-* **🎯 Final Answer:** `users_credentials`
-
-#### Question 15
-Enter the master Incident Correlation Flag awarded for reconstructing the attacker's full kill chain:
-* **💡 Hint:** Master triage flag representing the complete incident correlation.
-* **🎯 Final Answer:** `BLITZ{1nc1d3nt_c0rr3l4t10n_89c2e01b}`
+### Question 8: Security Remediation & Defense
+What secure coding defense mechanism should be implemented in application source code to completely prevent SQL injection vulnerabilities by separating SQL query structure from user-supplied input data?
+* **💡 Hint:** It involves pre-compiling the query and binding input variables separately.
+* **🎯 Final Answer:** `parameterized queries` *(also accept: `prepared statements`, `parameterization`)*
 
 ---
 
 ## Part 3: Master Flags Summary
 
-| Vulnerability Vector | Trigger Location | Final Flag |
+| Attack Vector | Trigger Location | Final Flag |
 |---|---|---|
-| **SQL Injection** | Catalog Search `UNION SELECT` | `BLITZ{5ql1_un10n_d8_3xf1l_9f82c4a17e}` |
-| **Cross-Site Scripting** | Catalog Search / Feedback Script Injection | `BLITZ{x55_cl13nt_3x3c_7b39d104fa}` |
-| **Login Compromise** | Login Portal (`admin` / `dragon123`) | `BLITZ{bruf3_4uth_c0mpr0m153_6e1a4d88}` |
-| **Incident Correlation** | Full Multi-Stage Attack Triage | `BLITZ{1nc1d3nt_c0rr3l4t10n_89c2e01b}` |
+| **SQL Injection** | Asset Directory Search (`UNION SELECT`) | `BLITZ{5ql1_3xf1ltr4t10n_k9x27p4}` |
+| **Directory Traversal** | Document Center (`/system/secrets.env`) | `BLITZ{p4th_tr4v3rs4l_f1l3_r34d_8a3d1}` |
+| **Cross-Site Scripting** | Search / Support Ticket (`<script>`) | `BLITZ{x55_d0m_3x3cut10n_9c417e2}` |

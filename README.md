@@ -5,20 +5,20 @@
 [![Zero Backend](https://img.shields.io/badge/Architecture-100%25%20Client--Side-purple?style=for-the-badge)](#architecture)
 [![Cyber Defense Range](https://img.shields.io/badge/Track-SOC%20Tier%201%20Analyst-cyan?style=for-the-badge)](#curriculum)
 
-An interactive, browser-based **Cyber Defense Training Lab** designed to teach cybersecurity students, junior SOC analysts, and incident responders how to hunt, analyze, and detect **Indicators of Compromise (IoCs)** for:
+An interactive, browser-based **Cyber Defense Training Lab** designed to teach cybersecurity students, junior SOC analysts, and incident responders how to research, exploit, and detect **Indicators of Compromise (IoCs)** in web server access logs for:
 1. **SQL Injection (SQLi)**
-2. **Cross-Site Scripting (XSS)**
-3. **Authentication Brute Force**
+2. **Directory Traversal (Path Traversal / LFI)**
+3. **Cross-Site Scripting (XSS)**
 
 ---
 
 ## 🌟 What's Included
 
-* **🎯 Target Application (`CyberVault Systems`)**: An interactive victim web application with a vulnerable search catalog, authentication portal, and guestbook, plus a 1-click **Attack Simulator Console** (Hydra brute force burst, sqlmap scanning, polyglot XSS).
+* **🎯 Realistic Target Application (`Aegis Corporate Portal`)**: An authentic enterprise asset management and document repository featuring a vulnerable search directory, file repository, login portal, and support ticket system. No artificial cheat buttons—students research and craft real payloads!
 * **🛡️ SOC SIEM Console (`CyberWatch`)**: Real-time log telemetry stream, HTTP status code activity histogram, threat breakdown charts, Lucene-like search engine, and a deep-dive forensic log inspection drawer.
-* **📝 Separate Questions & Answers Documents**:
+* **📝 Question Bank (8 Questions)**:
+  * [LAB_QUESTIONS_AND_ANSWERS.doc](LAB_QUESTIONS_AND_ANSWERS.doc) (Word Document format with Question, Hint, and Final Answer)
   * [LAB_QUESTIONS_AND_ANSWERS.md](LAB_QUESTIONS_AND_ANSWERS.md) (Markdown format)
-  * [LAB_QUESTIONS_AND_ANSWERS.doc](LAB_QUESTIONS_AND_ANSWERS.doc) (Word Document format)
 * **🚩 Non-Predictable Flags**: Formatted as `BLITZ{...}`.
 * **🌐 100% GitHub Pages Compatible**: Pure client-side HTML5/JavaScript. Zero backend or database setup required.
 

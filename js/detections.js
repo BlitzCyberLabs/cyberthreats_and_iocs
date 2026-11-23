@@ -1,7 +1,7 @@
 /**
  * SOC SIEM Detection Engine & Signature Rules
  * Inspects HTTP request fields (Method, URI, Query Params, Body, User-Agent)
- * for known Indicators of Compromise (IoCs).
+ * for known Indicators of Compromise (IoCs) across SQLi, XSS, and Directory Traversal.
  */
 
 import { decodePayloadSafely } from './utils.js';
@@ -17,18 +17,16 @@ export const DETECTION_RULES = [
       const target = getSearchablePayload(log);
       const decoded = decodePayloadSafely(target).toLowerCase();
 
-      // Check for UNION SELECT patterns
       const unionPattern = /\bunion\s+(all\s+)?select\b/i;
       const schemaPattern = /\binformation_schema\b/i;
-      const dbFuncPattern = /\b(current_user|database|user|schema|version)\s*\(\s*\)/i;
       const hexPattern = /0x[0-9a-f]{2,}/i;
 
       if (unionPattern.test(decoded)) {
         return {
           matched: true,
           type: "SQL Injection (UNION-Based)",
-          reason: "UNION SELECT pattern identified. Attacker is attempting to merge query results to extract unauthorized database records.",
-          mitigation: "Use Parameterized Queries / Prepared Statements (e.g. PDO in PHP, PreparedStatement in Java) and strictly validate input types."
+          reason: "UNION SELECT statement identified. Attacker is merging query results to extract unauthorized database records.",
+          mitigation: "Use Parameterized Queries / Prepared Statements and strictly enforce type validation."
         };
       }
 
@@ -36,8 +34,8 @@ export const DETECTION_RULES = [
         return {
           matched: true,
           type: "SQL Injection (Schema Reconnaissance)",
-          reason: "Access to information_schema detected. Attacker is probing database metadata for tables and columns.",
-          mitigation: "Restrict database user permissions to only required application tables and disable metadata access."
+          reason: "Access to information_schema detected. Attacker is enumerating database tables and columns.",
+          mitigation: "Restrict database user permissions and disable system metadata tables."
         };
       }
 
@@ -45,8 +43,8 @@ export const DETECTION_RULES = [
         return {
           matched: true,
           type: "SQL Injection (Hex-Encoded Exfiltration)",
-          reason: "Hex-encoded character strings detected within SQL context (e.g., 0x3a delimiter bypass).",
-          mitigation: "Implement Web Application Firewall (WAF) SQLi inspection and enforce strict input validation."
+          reason: "Hex-encoded character strings detected within SQL context.",
+          mitigation: "Enforce Web Application Firewall (WAF) query inspection."
         };
       }
 
@@ -55,25 +53,24 @@ export const DETECTION_RULES = [
   },
   {
     id: "RULE-SEC-002",
-    name: "SQL Injection - Tautology / Comment Signature",
+    name: "SQL Injection - Syntax Anomaly / Tautology Probe",
     category: "sqli",
     severity: "HIGH",
-    description: "Detects classic SQL boolean tautologies (' OR '1'='1), inline SQL comments (-- , /* */, #), or error probes.",
+    description: "Detects SQL boolean tautologies (' OR '1'='1), inline SQL comments (-- , /* */, #), or unhandled syntax error probes.",
     check: (log) => {
       const target = getSearchablePayload(log);
       const decoded = decodePayloadSafely(target).toLowerCase();
 
-      // Tautologies like ' OR 1=1, ' OR 'a'='a', " OR 1=1
       const tautologyPattern = /('|")\s*(or|and)\s+['"\d\w]+\s*=\s*['"\d\w]+/i;
       const commentPattern = /(--|\/\*|#|%23)/i;
-      const errorQuotePattern = /'|"/;
+      const isolatedQuote = /^'|'$/;
 
       if (tautologyPattern.test(decoded)) {
         return {
           matched: true,
           type: "SQL Injection (Tautology / Auth Bypass)",
-          reason: "Boolean tautology expression (' OR 1=1) detected. Commonly used to bypass authentication gates or force full record enumeration.",
-          mitigation: "Never concatenate user input directly into SQL strings. Always bind parameters."
+          reason: "Boolean tautology expression (' OR 1=1) detected. Used to bypass authentication or force record enumeration.",
+          mitigation: "Bind all query parameters using prepared statements."
         };
       }
 
@@ -81,8 +78,52 @@ export const DETECTION_RULES = [
         return {
           matched: true,
           type: "SQL Injection (Comment Truncation)",
-          reason: "SQL comment sequence (-- or /* */) coupled with SQL keywords detected, attempting to truncate remaining server SQL query logic.",
-          mitigation: "Reject input containing unescaped SQL syntax operators or use ORM abstraction layers."
+          reason: "SQL comment sequence (-- or /* */) attempting to truncate server SQL query logic.",
+          mitigation: "Use parameterized queries and reject unescaped query delimiter syntax."
+        };
+      }
+
+      if (log.status === 500 && (decoded.includes("'") || decoded.includes('"'))) {
+        return {
+          matched: true,
+          type: "SQL Injection (Error-Based Syntax Probe)",
+          reason: "HTTP 500 unhandled database exception triggered by unescaped quotation mark probe.",
+          mitigation: "Implement robust error handling that masks database error details from clients."
+        };
+      }
+
+      return null;
+    }
+  },
+  {
+    id: "RULE-SEC-006",
+    name: "Directory Traversal - Dot-Dot-Slash (../) Path Escape Attempt",
+    category: "path_traversal",
+    severity: "CRITICAL",
+    description: "Detects path traversal sequences (../, ..\\, %2e%2e%2f) attempting to escape the document root and access arbitrary operating system or configuration files.",
+    check: (log) => {
+      const target = getSearchablePayload(log);
+      const decoded = decodePayloadSafely(target).toLowerCase();
+
+      // Dot-dot-slash patterns (raw or encoded)
+      const traversalPattern = /(?:\.\.[/\\])+|(?:\%2e\%2e[\/\\])+|(?:\%2e\%2e\%2f)+/i;
+      const sensitiveFiles = /(?:etc\/passwd|etc\/shadow|secrets\.env|\.env|win\.ini|windows\/system32|boot\.ini)/i;
+
+      if (traversalPattern.test(target) || traversalPattern.test(decoded)) {
+        return {
+          matched: true,
+          type: "Directory Traversal (Path Traversal)",
+          reason: `Path traversal pattern (../) detected. Attacker is attempting to escape the web application directory tree.`,
+          mitigation: "Sanitize user-supplied file paths using path.basename(), validate against a strict whitelist of permitted files, and use secure file storage abstractions."
+        };
+      }
+
+      if (sensitiveFiles.test(decoded)) {
+        return {
+          matched: true,
+          type: "Directory Traversal (Sensitive System File Probe)",
+          reason: `Attempted access to protected system resource detected in request URI: "${decoded}".`,
+          mitigation: "Never pass unsanitized client inputs directly to filesystem APIs (e.g. fs.readFile, include, file_get_contents)."
         };
       }
 
@@ -109,8 +150,8 @@ export const DETECTION_RULES = [
         return {
           matched: true,
           type: "Cross-Site Scripting (Script Tag Injection)",
-          reason: "Raw <script> tag detected in payload. Attacker is attempting to execute JavaScript in the victim's browser context.",
-          mitigation: "Context-aware HTML entity encoding on output (e.g., &lt;script&gt;) and implement Content Security Policy (CSP)."
+          reason: "Raw <script> tag detected in payload. Attacker is injecting client-side JavaScript.",
+          mitigation: "Apply context-aware HTML entity encoding on output and enforce a strict Content Security Policy (CSP)."
         };
       }
 
@@ -118,7 +159,7 @@ export const DETECTION_RULES = [
         return {
           matched: true,
           type: "Cross-Site Scripting (Event Handler / Polyglot)",
-          reason: "HTML element with inline JavaScript event handler (e.g. <img src=x onerror=...>) detected.",
+          reason: "HTML element with inline event handler (e.g. <img src=x onerror=...>) detected.",
           mitigation: "Sanitize user inputs with a trusted sanitizer (DOMPurify) and strip dangerous attributes."
         };
       }
@@ -127,61 +168,11 @@ export const DETECTION_RULES = [
         return {
           matched: true,
           type: "Cross-Site Scripting (Cookie / Credential Theft)",
-          reason: "Payload references document.cookie or browser redirect methods within injection syntax.",
-          mitigation: "Set HttpOnly and SameSite flags on all sensitive session cookies to prevent JavaScript access."
+          reason: "Payload references document.cookie within an injection context.",
+          mitigation: "Set HttpOnly and SameSite flags on all sensitive session cookies."
         };
       }
 
-      return null;
-    }
-  },
-  {
-    id: "RULE-SEC-004",
-    name: "Authentication Brute Force / High-Frequency Login Failures",
-    category: "brute_force",
-    severity: "HIGH",
-    description: "Detects abnormal bursts of HTTP 401 Unauthorized status responses targeting authentication endpoints (/api/login, /login), or credential stuffing signatures.",
-    check: (log, contextLogs = []) => {
-      if (log.uri && log.uri.includes('/login')) {
-        // If this single log is a 401, check recent history for this IP
-        if (log.status === 401) {
-          const recentAttempts = contextLogs.filter(l => 
-            l.client_ip === log.client_ip && 
-            l.uri && l.uri.includes('/login') && 
-            l.status === 401 &&
-            Math.abs(new Date(l.timestamp) - new Date(log.timestamp)) < 120000 // 2 minutes window
-          );
-
-          if (recentAttempts.length >= 3) {
-            return {
-              matched: true,
-              type: "Authentication Brute Force (High Frequency)",
-              reason: `Multiple consecutive failed authentication attempts (${recentAttempts.length} within 2 mins) from IP ${log.client_ip}.`,
-              mitigation: "Enforce account lockout thresholds, progressive rate-limiting (e.g., exponential backoff / CAPTCHA), and Multi-Factor Authentication (MFA)."
-            };
-          }
-        }
-
-        // Check for sudden 302/200 following consecutive 401s (Compromise!)
-        if ((log.status === 200 || log.status === 302) && log.method === 'POST') {
-          const precedingFailures = contextLogs.filter(l => 
-            l.client_ip === log.client_ip && 
-            l.uri && l.uri.includes('/login') && 
-            l.status === 401 &&
-            (new Date(log.timestamp) - new Date(l.timestamp)) > 0 &&
-            (new Date(log.timestamp) - new Date(l.timestamp)) < 180000
-          );
-
-          if (precedingFailures.length >= 4) {
-            return {
-              matched: true,
-              type: "Account Takeover / Successful Brute Force Compromise",
-              reason: `Successful authentication (status ${log.status}) immediately following ${precedingFailures.length} failed attempts from IP ${log.client_ip}. Probable valid password discovered!`,
-              mitigation: "Immediately invalidate the session, trigger an out-of-band password reset, and block the offending source IP address."
-            };
-          }
-        }
-      }
       return null;
     }
   },
@@ -190,15 +181,13 @@ export const DETECTION_RULES = [
     name: "Automated Security Scanner User-Agent Detected",
     category: "recon",
     severity: "MEDIUM",
-    description: "Detects User-Agent headers associated with automated penetration testing tools or vulnerability scanners (sqlmap, hydra, nikto, dirbuster, gobuster).",
+    description: "Detects User-Agent headers associated with automated penetration testing tools or vulnerability scanners (sqlmap, nikto, dirbuster).",
     check: (log) => {
       const ua = (log.user_agent || '').toLowerCase();
       const scanners = [
         { name: 'sqlmap', pattern: /sqlmap/i },
-        { name: 'Hydra', pattern: /hydra/i },
         { name: 'Nikto', pattern: /nikto/i },
-        { name: 'DirBuster / Gobuster', pattern: /dirbuster|gobuster|ffuf/i },
-        { name: 'Python Requests Script', pattern: /python-requests/i }
+        { name: 'DirBuster / Gobuster', pattern: /dirbuster|gobuster|ffuf/i }
       ];
 
       for (const s of scanners) {
@@ -206,8 +195,8 @@ export const DETECTION_RULES = [
           return {
             matched: true,
             type: `Automated Tool Scanner (${s.name})`,
-            reason: `User-Agent string explicitly identifies automated attack tool: "${log.user_agent}".`,
-            mitigation: "Block generic automated scanner User-Agents at the CDN / reverse proxy and inspect IP reputation."
+            reason: `User-Agent string identifies automated tool: "${log.user_agent}".`,
+            mitigation: "Block generic automated scanner User-Agents at the CDN / reverse proxy."
           };
         }
       }
@@ -254,7 +243,7 @@ export function inspectLogForIoCs(log, contextLogs = []) {
     matched_rule: null,
     rule_name: null,
     severity: "INFO",
-    category: "legitimate",
+    category: log.category || "legitimate",
     ioc_detected: false,
     ioc_details: null,
     attack_type: null,
