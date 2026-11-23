@@ -2,154 +2,258 @@
 <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
 <head>
   <meta charset="utf-8">
-  <title>SOC Analyst Lab: Questions and Answer Key</title>
+  <title>SOC Analyst Lab: Questions, Hints and Final Answers</title>
   <style>
-    body { font-family: Calibri, Arial, sans-serif; font-size: 11pt; line-height: 1.5; color: #1e293b; margin: 30px; }
-    h1 { color: #0f172a; font-size: 20pt; border-bottom: 2px solid #0f172a; padding-bottom: 5px; }
-    h2 { color: #047857; font-size: 15pt; border-bottom: 1px solid #cbd5e1; padding-bottom: 3px; margin-top: 25px; }
-    h3 { color: #0369a1; font-size: 12pt; margin-top: 15px; }
-    code { font-family: Consolas, monospace; background: #f1f5f9; padding: 2px 5px; border-radius: 3px; color: #b91c1c; font-size: 10pt; }
-    pre { font-family: Consolas, monospace; background: #f8fafc; border: 1px solid #e2e8f0; padding: 10px; border-radius: 4px; }
-    table { width: 100%; border-collapse: collapse; margin-top: 10px; margin-bottom: 15px; }
-    th { background: #0f172a; color: white; padding: 8px; text-align: left; font-size: 10pt; }
-    td { border: 1px solid #cbd5e1; padding: 8px; font-size: 10pt; }
-    .ans-box { background: #f0fdf4; border-left: 4px solid #16a34a; padding: 8px 12px; margin: 6px 0 16px 0; }
-    .flag-box { background: #eff6ff; border: 1px solid #bfdbfe; padding: 10px; border-radius: 4px; font-family: Consolas, monospace; font-weight: bold; color: #1d4ed8; }
+    body { font-family: Calibri, 'Segoe UI', Arial, sans-serif; font-size: 11pt; line-height: 1.5; color: #1e293b; margin: 35px; }
+    h1 { color: #0f172a; font-size: 22pt; border-bottom: 2px solid #0f172a; padding-bottom: 6px; margin-bottom: 4px; }
+    .subtitle { color: #64748b; font-size: 12pt; margin-top: 0; margin-bottom: 25px; }
+    h2 { color: #047857; font-size: 15pt; border-bottom: 1px solid #cbd5e1; padding-bottom: 4px; margin-top: 30px; }
+    .q-card { border: 1px solid #cbd5e1; border-radius: 6px; padding: 14px; margin-bottom: 20px; background: #ffffff; }
+    .q-title { font-weight: bold; color: #0f172a; font-size: 11.5pt; margin-bottom: 10px; }
+    .hint-box { background: #fffbeb; border-left: 4px solid #f59e0b; padding: 8px 12px; margin-bottom: 10px; font-size: 10pt; color: #92400e; }
+    .ans-box { background: #f0fdf4; border-left: 4px solid #16a34a; padding: 8px 12px; font-size: 10.5pt; color: #166534; }
+    code { font-family: Consolas, 'Courier New', monospace; background: #f1f5f9; padding: 2px 5px; border-radius: 3px; font-size: 10pt; color: #b91c1c; font-weight: bold; }
+    table { width: 100%; border-collapse: collapse; margin-top: 15px; margin-bottom: 20px; }
+    th { background: #0f172a; color: white; padding: 8px 10px; text-align: left; font-size: 10pt; }
+    td { border: 1px solid #cbd5e1; padding: 8px 10px; font-size: 10pt; }
+    .walkthrough-step { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 12px; margin-bottom: 12px; }
+    .walkthrough-step strong { color: #0369a1; }
   </style>
 </head>
 <body>
 
   <h1>🛡️ SOC Analyst Lab: Web Attack Forensics & IoC Hunting</h1>
-  <p><strong>Official Lab Manual, Question Bank & Master Answer Key</strong></p>
-  <p><em>Use this document to populate your LMS / assessment platform or grade student submissions.</em></p>
+  <p class="subtitle"><strong>Official Question Bank, Hints & Final Answers Key</strong></p>
+
+  <p><em>This document contains the complete step-by-step lab walkthrough, followed by the structured Question Bank with Hints and Final Answers formatted for easy copy-pasting into your learning management or CTF platform.</em></p>
 
   <hr>
 
-  <h2>Part 1: How to Perform the Lab</h2>
-  <ol>
-    <li>
-      <strong>SQL Injection (SQLi):</strong>
-      <ul>
-        <li>Go to <strong>Target Application &rarr; Catalog Search</strong>.</li>
-        <li>Inject: <code>' UNION SELECT 1,username,password,email,role FROM users--</code></li>
-        <li>View the dumped database records containing admin password and Flag #1: <code>BLITZ{5ql1_un10n_d8_3xf1l_9f82c4a17e}</code>.</li>
-        <li>Switch to the <strong>SOC SIEM Console</strong>, filter by <code>status:500</code> or <code>uri:*union*</code>, and inspect the decoded SQL keywords and <code>%27</code> single quote encodings.</li>
-      </ul>
-    </li>
-    <li>
-      <strong>Cross-Site Scripting (XSS):</strong>
-      <ul>
-        <li>In <strong>Catalog Search</strong> or <strong>Feedback Board</strong>, submit: <code>&lt;script&gt;alert('XSS')&lt;/script&gt;</code>.</li>
-        <li>Observe the browser sandbox alert disclosing Flag #2: <code>BLITZ{x55_cl13nt_3x3c_7b39d104fa}</code>.</li>
-        <li>In the SIEM, filter for <code>rule:RULE-SEC-003</code> or <code>category:xss</code> to inspect raw vs. decoded HTML encodings (<code>%3Cscript%3E</code>).</li>
-      </ul>
-    </li>
-    <li>
-      <strong>Authentication Brute Force:</strong>
-      <ul>
-        <li>Go to <strong>Login Portal</strong> &rarr; click <strong>"Hydra Burst"</strong> (or use Attack Simulator).</li>
-        <li>Observe 24 rapid <code>401 Unauthorized</code> responses followed by valid password <code>dragon123</code> (<code>302 Found</code>), giving Flag #3: <code>BLITZ{bruf3_4uth_c0mpr0m153_6e1a4d88}</code>.</li>
-        <li>In the SIEM, view the red 401 surge on the histogram and trace the transition from 401 to 302.</li>
-      </ul>
-    </li>
-  </ol>
-
-  <hr>
-
-  <h2>Part 2: Official Question Bank & Answer Key</h2>
-
-  <h3>Section 1: Web Log Fundamentals</h3>
-  <p><strong>Q1.1:</strong> In standard HTTP communication, which 3-digit response status code signifies an authentication failure (Unauthorized access)?</p>
-  <div class="ans-box">
-    <strong>Answer:</strong> <code>401</code><br>
-    <em>Explanation:</em> HTTP 401 indicates the request lacked valid authentication credentials.
+  <h2>Part 1: Quick Walkthrough - How to Perform the Lab</h2>
+  
+  <div class="walkthrough-step">
+    <strong>Step 1: SQL Injection Attack & Detection</strong><br>
+    1. In the <strong>Target Application</strong>, go to <strong>"🔍 Catalog & Search"</strong>.<br>
+    2. Enter: <code>' UNION SELECT 1,username,password,email,role FROM users--</code><br>
+    3. The application leaks the hidden database users table with admin credentials and Flag: <code>BLITZ{5ql1_un10n_d8_3xf1l_9f82c4a17e}</code>.<br>
+    4. In the <strong>SOC SIEM Console</strong>, filter by <code>uri:*union*</code> or <code>status:500</code>. Click <strong>"Inspect"</strong> to analyze URL encoding <code>%27</code> and decoded SQL syntax.
   </div>
 
-  <p><strong>Q1.2:</strong> In the standard NCSA/Apache Combined Log Format, which field comes immediately after the HTTP request line (e.g. <code>"GET /index.html HTTP/1.1"</code>)?</p>
-  <div class="ans-box">
-    <strong>Answer:</strong> <code>status code</code> (or <code>status</code>)<br>
-    <em>Explanation:</em> Format order: Client IP &rarr; Ident &rarr; AuthUser &rarr; Timestamp &rarr; Request Line &rarr; <strong>Status Code</strong> &rarr; Bytes &rarr; Referer &rarr; User-Agent.
+  <div class="walkthrough-step">
+    <strong>Step 2: Cross-Site Scripting (XSS) Attack & Detection</strong><br>
+    1. In the <strong>Target Application</strong>, go to <strong>"Catalog Search"</strong> (Reflected) or <strong>"Feedback Board"</strong> (Stored).<br>
+    2. Submit: <code>&lt;script&gt;alert('XSS')&lt;/script&gt;</code>.<br>
+    3. An execution pop-up triggers in the sandbox displaying Flag: <code>BLITZ{x55_cl13nt_3x3c_7b39d104fa}</code>.<br>
+    4. In the <strong>SOC SIEM Console</strong>, filter by <code>category:xss</code> or <code>rule:RULE-SEC-003</code> to observe URL encodings <code>%3C</code> and <code>%3E</code>, and trace the attacker C2 endpoint (<code>http://evil-c2.attacker.com/steal</code>) in log <code>log-017</code>.
   </div>
 
-  <h3>Section 2: SQL Injection Forensics</h3>
-  <p><strong>Q2.1:</strong> What is the two-character hexadecimal URL percent encoding for a single quotation mark (<code>'</code>)?</p>
-  <div class="ans-box">
-    <strong>Answer:</strong> <code>%27</code><br>
-    <em>Explanation:</em> ASCII 39 (single quote) is hex 27, encoded as <code>%27</code> in URL query parameters.
+  <div class="walkthrough-step">
+    <strong>Step 3: Authentication Brute Force Attack & Detection</strong><br>
+    1. In the <strong>Target Application</strong>, go to <strong>"🔐 Login Portal"</strong> &rarr; click <strong>"Hydra Burst"</strong>.<br>
+    2. Observe 24 rapid failed logins (<code>401 Unauthorized</code>) followed by the valid password <code>dragon123</code> (<code>302 Found</code>).<br>
+    3. Logging in unlocks Flag: <code>BLITZ{bruf3_4uth_c0mpr0m153_6e1a4d88}</code>.<br>
+    4. In the <strong>SOC SIEM Console</strong>, view the red <code>401</code> volume spike on the histogram and locate the compromise transition from 401 to 302.
   </div>
 
-  <p><strong>Q2.2:</strong> Exploit the SQL Injection vulnerability in the Target Application catalog search using a <code>UNION SELECT</code> query. What is the administrative secret flag retrieved from the leaked user database?</p>
-  <div class="ans-box">
-    <strong>Answer:</strong> <code>BLITZ{5ql1_un10n_d8_3xf1l_9f82c4a17e}</code>
-  </div>
-
-  <p><strong>Q2.3:</strong> What source IP address launched the automated <code>sqlmap</code> vulnerability scan against <code>/catalog/search</code> in the baseline logs?</p>
-  <div class="ans-box">
-    <strong>Answer:</strong> <code>198.51.100.44</code><br>
-    <em>Explanation:</em> Filtering the SIEM for <code>sqlmap</code> isolates requests from IP 198.51.100.44.
-  </div>
-
-  <h3>Section 3: Cross-Site Scripting (XSS) Forensics</h3>
-  <p><strong>Q3.1:</strong> What URL percent-encoded string represents the opening angle bracket (<code>&lt;</code>) frequently observed in raw access logs during HTML injection?</p>
-  <div class="ans-box">
-    <strong>Answer:</strong> <code>%3C</code> (or <code>%3c</code>)
-  </div>
-
-  <p><strong>Q3.2:</strong> Trigger the Reflected XSS vulnerability in the Target Application search bar with a script alert payload. What flag is displayed in the execution sandbox?</p>
-  <div class="ans-box">
-    <strong>Answer:</strong> <code>BLITZ{x55_cl13nt_3x3c_7b39d104fa}</code>
-  </div>
-
-  <p><strong>Q3.3:</strong> In the SIEM logs, inspect the stored XSS attack targeting <code>/board/feedback</code>. What malicious external C2 domain endpoint was the attacker attempting to load scripts from?</p>
-  <div class="ans-box">
-    <strong>Answer:</strong> <code>http://evil-c2.attacker.com/steal</code> (or <code>evil-c2.attacker.com</code>)
-  </div>
-
-  <h3>Section 4: Authentication Brute Force Forensics</h3>
-  <p><strong>Q4.1:</strong> What HTTP status code anomaly in the SIEM timeline serves as the primary behavioral indicator of a login brute-force attack?</p>
-  <div class="ans-box">
-    <strong>Answer:</strong> <code>401</code> (or <code>401 Unauthorized</code>)
-  </div>
-
-  <p><strong>Q4.2:</strong> What is the cracked legitimate password for user <code>admin</code> discovered during the brute force attack?</p>
-  <div class="ans-box">
-    <strong>Answer:</strong> <code>dragon123</code>
-  </div>
-
-  <p><strong>Q4.3:</strong> What flag is unlocked upon successfully authenticating as <code>admin</code> on the Target Application login portal?</p>
-  <div class="ans-box">
-    <strong>Answer:</strong> <code>BLITZ{bruf3_4uth_c0mpr0m153_6e1a4d88}</code>
-  </div>
-
-  <p><strong>Q4.4:</strong> In the baseline SIEM logs, an attacker brute-forced the account <code>sarah_admin</code>. What was the attacker's source IP address?</p>
-  <div class="ans-box">
-    <strong>Answer:</strong> <code>203.0.113.89</code>
-  </div>
-
-  <h3>Section 5: Capstone Incident Investigation</h3>
-  <p><strong>Q5.1:</strong> What was the IP address of the adversary who conducted the combined XSS injection and administrative data export?</p>
-  <div class="ans-box">
-    <strong>Answer:</strong> <code>198.51.100.72</code>
-  </div>
-
-  <p><strong>Q5.2:</strong> What sensitive database table name was targeted in the attacker's unauthorized <code>GET /admin/export</code> request?</p>
-  <div class="ans-box">
-    <strong>Answer:</strong> <code>users_credentials</code>
-  </div>
-
-  <p><strong>Q5.3:</strong> Enter the master Incident Correlation Flag:</p>
-  <div class="ans-box">
-    <strong>Answer:</strong> <code>BLITZ{1nc1d3nt_c0rr3l4t10n_89c2e01b}</code>
+  <div class="walkthrough-step">
+    <strong>Step 4: Threat Actor Incident Correlation</strong><br>
+    1. In the SIEM, filter by <code>ioc:true</code> to correlate events across timestamps.<br>
+    2. Identify threat actor IP <code>198.51.100.72</code> accessing unauthorized endpoint <code>/admin/export?table=users_credentials</code>.<br>
+    3. Conclude the investigation to obtain master Flag: <code>BLITZ{1nc1d3nt_c0rr3l4t10n_89c2e01b}</code>.
   </div>
 
   <hr>
 
-  <h2>Part 3: Master Flags Summary</h2>
+  <h2>Part 2: Questions, Hints & Final Answers</h2>
+
+  <!-- Question 1 -->
+  <div class="q-card">
+    <div class="q-title">Question 1 (Web Log Fundamentals)</div>
+    <p>Which standard 3-digit HTTP response status code indicates an authentication failure (Unauthorized access) when credentials are invalid or missing?</p>
+    <div class="hint-box">
+      <strong>💡 Hint:</strong> Think of the client error code in the 4xx range returned by web servers when login credentials fail.
+    </div>
+    <div class="ans-box">
+      <strong>🎯 Final Answer:</strong> <code>401</code>
+    </div>
+  </div>
+
+  <!-- Question 2 -->
+  <div class="q-card">
+    <div class="q-title">Question 2 (Web Log Fundamentals)</div>
+    <p>In the standard NCSA/Apache Combined Log Format, which field comes immediately after the HTTP request line (e.g. <code>"GET /catalog/search HTTP/1.1"</code>)?</p>
+    <div class="hint-box">
+      <strong>💡 Hint:</strong> It is the 3-digit numerical code indicating whether the request succeeded (200), failed authentication (401), or errored (500).
+    </div>
+    <div class="ans-box">
+      <strong>🎯 Final Answer:</strong> <code>status code</code> <em>(also accept: status, HTTP status, status_code)</em>
+    </div>
+  </div>
+
+  <!-- Question 3 -->
+  <div class="q-card">
+    <div class="q-title">Question 3 (SQL Injection Forensics)</div>
+    <p>What is the two-character hexadecimal URL percent encoding for a single quotation mark (<code>'</code>), commonly seen in access logs when attackers break SQL query strings?</p>
+    <div class="hint-box">
+      <strong>💡 Hint:</strong> In the ASCII table, single quote (') is character 39 in decimal, which equals hex 27. It is prefixed with a percent sign in URLs.
+    </div>
+    <div class="ans-box">
+      <strong>🎯 Final Answer:</strong> <code>%27</code>
+    </div>
+  </div>
+
+  <!-- Question 4 -->
+  <div class="q-card">
+    <div class="q-title">Question 4 (SQL Injection Forensics)</div>
+    <p>Exploit the SQL Injection vulnerability in the Target Application catalog search using a <code>UNION SELECT</code> query. What secret challenge flag is retrieved from the leaked administrator database record?</p>
+    <div class="hint-box">
+      <strong>💡 Hint:</strong> In the Target Application, enter <code>' UNION SELECT 1,username,password,email,role FROM users--</code> into the catalog search bar.
+    </div>
+    <div class="ans-box">
+      <strong>🎯 Final Answer:</strong> <code>BLITZ{5ql1_un10n_d8_3xf1l_9f82c4a17e}</code>
+    </div>
+  </div>
+
+  <!-- Question 5 -->
+  <div class="q-card">
+    <div class="q-title">Question 5 (SQL Injection Forensics)</div>
+    <p>In the SOC SIEM logs, search for automated vulnerability scanning activity. What was the source IP address that executed the automated <code>sqlmap</code> scan against <code>/catalog/search</code>?</p>
+    <div class="hint-box">
+      <strong>💡 Hint:</strong> In the SIEM console search bar, type <code>sqlmap</code> or <code>rule:RULE-SEC-005</code> and look at the Client IP column.
+    </div>
+    <div class="ans-box">
+      <strong>🎯 Final Answer:</strong> <code>198.51.100.44</code>
+    </div>
+  </div>
+
+  <!-- Question 6 -->
+  <div class="q-card">
+    <div class="q-title">Question 6 (Cross-Site Scripting Forensics)</div>
+    <p>What URL percent-encoded string represents the opening angle bracket (<code>&lt;</code>) frequently observed in raw access logs during HTML and script tag injection attacks?</p>
+    <div class="hint-box">
+      <strong>💡 Hint:</strong> In ASCII, the less-than symbol (&lt;) has decimal value 60, which corresponds to hex 3C.
+    </div>
+    <div class="ans-box">
+      <strong>🎯 Final Answer:</strong> <code>%3C</code> <em>(also accept: %3c)</em>
+    </div>
+  </div>
+
+  <!-- Question 7 -->
+  <div class="q-card">
+    <div class="q-title">Question 7 (Cross-Site Scripting Forensics)</div>
+    <p>Trigger the Reflected XSS vulnerability in the Target Application search bar with a script alert payload. What challenge flag is displayed in the client-side execution sandbox modal?</p>
+    <div class="hint-box">
+      <strong>💡 Hint:</strong> In the Target Application catalog search bar, enter <code>&lt;script&gt;alert('XSS')&lt;/script&gt;</code> and press Search.
+    </div>
+    <div class="ans-box">
+      <strong>🎯 Final Answer:</strong> <code>BLITZ{x55_cl13nt_3x3c_7b39d104fa}</code>
+    </div>
+  </div>
+
+  <!-- Question 8 -->
+  <div class="q-card">
+    <div class="q-title">Question 8 (Cross-Site Scripting Forensics)</div>
+    <p>In the SOC SIEM logs, inspect the stored XSS attack targeting the guestbook endpoint (<code>/board/feedback</code>). What malicious external C2 domain endpoint was the attacker attempting to exfiltrate session cookies to?</p>
+    <div class="hint-box">
+      <strong>💡 Hint:</strong> Inspect log <code>log-017</code> in the SIEM console and examine the decoded <code>src</code> attribute inside the injected script tag.
+    </div>
+    <div class="ans-box">
+      <strong>🎯 Final Answer:</strong> <code>http://evil-c2.attacker.com/steal</code> <em>(also accept: evil-c2.attacker.com/steal, http://evil-c2.attacker.com, evil-c2.attacker.com)</em>
+    </div>
+  </div>
+
+  <!-- Question 9 -->
+  <div class="q-card">
+    <div class="q-title">Question 9 (Authentication Brute Force Forensics)</div>
+    <p>What HTTP response status code anomaly in the SIEM timeline histogram serves as the primary behavioral indicator of an ongoing login brute-force attack?</p>
+    <div class="hint-box">
+      <strong>💡 Hint:</strong> Look at the 3-digit status code that spikes sharply on the histogram during high-frequency password guessing.
+    </div>
+    <div class="ans-box">
+      <strong>🎯 Final Answer:</strong> <code>401</code> <em>(also accept: 401 Unauthorized)</em>
+    </div>
+  </div>
+
+  <!-- Question 10 -->
+  <div class="q-card">
+    <div class="q-title">Question 10 (Authentication Brute Force Forensics)</div>
+    <p>Execute the brute force attack against user <code>admin</code> on the Target Application login portal. What is the cracked legitimate password that yields an HTTP 302 redirect?</p>
+    <div class="hint-box">
+      <strong>💡 Hint:</strong> Click "Hydra Burst" on the login page or run the Attack Simulator. Check the attempt that authenticates with status 302.
+    </div>
+    <div class="ans-box">
+      <strong>🎯 Final Answer:</strong> <code>dragon123</code>
+    </div>
+  </div>
+
+  <!-- Question 11 -->
+  <div class="q-card">
+    <div class="q-title">Question 11 (Authentication Brute Force Forensics)</div>
+    <p>What challenge flag is unlocked upon successfully authenticating as <code>admin</code> on the Target Application login portal?</p>
+    <div class="hint-box">
+      <strong>💡 Hint:</strong> Log into the Target Application using username <code>admin</code> and password <code>dragon123</code> (or inject SQLi bypass <code>' OR '1'='1</code>) and read the success message.
+    </div>
+    <div class="ans-box">
+      <strong>🎯 Final Answer:</strong> <code>BLITZ{bruf3_4uth_c0mpr0m153_6e1a4d88}</code>
+    </div>
+  </div>
+
+  <!-- Question 12 -->
+  <div class="q-card">
+    <div class="q-title">Question 12 (Authentication Brute Force Forensics)</div>
+    <p>In the SOC SIEM baseline logs, an attacker conducted an automated brute force attack against the account <code>sarah_admin</code>. What was the attacker's source IP address?</p>
+    <div class="hint-box">
+      <strong>💡 Hint:</strong> In the SIEM search bar, search for <code>sarah_admin</code>. Find the IP that issued 34 consecutive 401 attempts before a single 302 redirect.
+    </div>
+    <div class="ans-box">
+      <strong>🎯 Final Answer:</strong> <code>203.0.113.89</code>
+    </div>
+  </div>
+
+  <!-- Question 13 -->
+  <div class="q-card">
+    <div class="q-title">Question 13 (Incident Investigation)</div>
+    <p>Identify the external threat actor IP address responsible for the multi-stage attack involving XSS injection and administrative data export?</p>
+    <div class="hint-box">
+      <strong>💡 Hint:</strong> Filter the SIEM by <code>category:xss</code> or inspect logs <code>log-015</code> through <code>log-018</code> to identify the common source IP address.
+    </div>
+    <div class="ans-box">
+      <strong>🎯 Final Answer:</strong> <code>198.51.100.72</code>
+    </div>
+  </div>
+
+  <!-- Question 14 -->
+  <div class="q-card">
+    <div class="q-title">Question 14 (Incident Investigation)</div>
+    <p>What sensitive database table name was targeted in the attacker's unauthorized <code>GET /admin/export</code> request?</p>
+    <div class="hint-box">
+      <strong>💡 Hint:</strong> Inspect log <code>log-018</code> in the SIEM console and examine the <code>table</code> parameter in the decoded query string.
+    </div>
+    <div class="ans-box">
+      <strong>🎯 Final Answer:</strong> <code>users_credentials</code>
+    </div>
+  </div>
+
+  <!-- Question 15 -->
+  <div class="q-card">
+    <div class="q-title">Question 15 (Incident Investigation)</div>
+    <p>Enter the master Incident Correlation Flag awarded for reconstructing the attacker's full kill chain:</p>
+    <div class="hint-box">
+      <strong>💡 Hint:</strong> Master triage flag representing the complete incident correlation.
+    </div>
+    <div class="ans-box">
+      <strong>🎯 Final Answer:</strong> <code>BLITZ{1nc1d3nt_c0rr3l4t10n_89c2e01b}</code>
+    </div>
+  </div>
+
+  <hr>
+
+  <h2>Part 3: Master Flags Cheat Sheet</h2>
   <table>
     <tr>
-      <th>Vector</th>
-      <th>Trigger Location</th>
-      <th>Flag Value</th>
+      <th style="width: 25%;">Vulnerability Vector</th>
+      <th style="width: 35%;">Trigger / Location</th>
+      <th style="width: 40%;">Final Flag</th>
     </tr>
     <tr>
       <td><strong>SQL Injection</strong></td>
@@ -158,17 +262,17 @@
     </tr>
     <tr>
       <td><strong>Cross-Site Scripting</strong></td>
-      <td>Search / Feedback Script Injection</td>
+      <td>Catalog Search / Feedback Script Injection</td>
       <td><code>BLITZ{x55_cl13nt_3x3c_7b39d104fa}</code></td>
     </tr>
     <tr>
-      <td><strong>Brute Force Compromise</strong></td>
+      <td><strong>Login Compromise</strong></td>
       <td>Login Portal (admin / dragon123)</td>
       <td><code>BLITZ{bruf3_4uth_c0mpr0m153_6e1a4d88}</code></td>
     </tr>
     <tr>
       <td><strong>Incident Correlation</strong></td>
-      <td>SIEM Advanced Analysis</td>
+      <td>Full Multi-Stage Attack Triage</td>
       <td><code>BLITZ{1nc1d3nt_c0rr3l4t10n_89c2e01b}</code></td>
     </tr>
   </table>
