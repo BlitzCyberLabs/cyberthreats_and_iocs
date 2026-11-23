@@ -1,0 +1,663 @@
+/**
+ * SOC SIEM Dashboard & Log Analysis Interface
+ * Provides interactive log search, status code histograms, threat charts,
+ * alert feeds, and deep-dive forensic log inspection.
+ */
+
+import { store } from './store.js';
+import { logEngine } from './log-engine.js';
+import { 
+  formatRelativeTime, 
+  escapeHtml, 
+  decodePayloadSafely, 
+  toApacheCombinedLog, 
+  downloadFile,
+  showToast,
+  sfx
+} from './utils.js';
+
+class SocSiem {
+  constructor() {
+    this.container = null;
+    this.statusChart = null;
+    this.categoryChart = null;
+    this.currentPage = 1;
+    this.pageSize = 25;
+  }
+
+  init(containerId) {
+    this.container = document.getElementById(containerId);
+    if (!this.container) return;
+
+    // Listen to store updates
+    store.on('logsUpdated', () => this.render());
+    store.on('logSelected', (log) => this.showLogInspectorModal(log));
+    store.on('filterChanged', () => this.render());
+
+    this.render();
+  }
+
+  render() {
+    if (!this.container) return;
+
+    const filteredLogs = logEngine.filterLogs(store.logs, store.searchQuery, store.activeFilterCategory);
+    const kpis = this.calculateKPIs(store.logs);
+
+    this.container.innerHTML = `
+      <div class="space-y-6">
+        <!-- Top SIEM Navigation & Control Bar -->
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 flex flex-wrap items-center justify-between gap-4 shadow-xl">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-lg bg-emerald-950 border border-emerald-700/60 flex items-center justify-center text-emerald-400">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+            </div>
+            <div>
+              <h2 class="text-base font-bold text-white flex items-center gap-2">
+                CyberWatch SOC SIEM Console
+                <span class="text-xs px-2 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-800 font-mono">LIVE TELEMETRY</span>
+              </h2>
+              <p class="text-xs text-slate-400">Real-time Web Application Firewall & Access Log Telemetry</p>
+            </div>
+          </div>
+
+          <!-- Actions: Export, Reset, Generate -->
+          <div class="flex items-center gap-2 text-xs">
+            <button id="siem-btn-generate" class="bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-2 rounded-lg border border-slate-700 transition-all flex items-center gap-1.5 font-medium">
+              <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
+              + Benign Log
+            </button>
+
+            <!-- Export Dropdown -->
+            <div class="relative group">
+              <button class="bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-2 rounded-lg border border-slate-700 transition-all flex items-center gap-1.5 font-medium">
+                <svg class="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                Export Logs
+              </button>
+              <div class="hidden group-hover:block absolute right-0 mt-1 w-44 bg-slate-900 border border-slate-800 rounded-lg shadow-2xl py-1 z-30">
+                <button id="siem-export-apache" class="w-full text-left px-3 py-1.5 text-xs text-slate-300 hover:bg-slate-800 hover:text-white font-mono">
+                  Apache Combined (.log)
+                </button>
+                <button id="siem-export-json" class="w-full text-left px-3 py-1.5 text-xs text-slate-300 hover:bg-slate-800 hover:text-white font-mono">
+                  Structured JSON (.json)
+                </button>
+                <button id="siem-export-csv" class="w-full text-left px-3 py-1.5 text-xs text-slate-300 hover:bg-slate-800 hover:text-white font-mono">
+                  Tabular CSV (.csv)
+                </button>
+              </div>
+            </div>
+
+            <button id="siem-btn-reset" class="bg-rose-950/40 hover:bg-rose-900/40 text-rose-300 px-3 py-2 rounded-lg border border-rose-800/60 transition-all flex items-center gap-1 font-mono">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+              Reset Baseline
+            </button>
+          </div>
+        </div>
+
+        <!-- Metric KPI Cards -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div class="bg-slate-900/90 border border-slate-800 p-4 rounded-xl">
+            <span class="text-xs text-slate-400 font-mono">TOTAL EVENTS</span>
+            <div class="text-2xl font-bold text-white mt-1">${kpis.totalEvents}</div>
+            <div class="text-[11px] text-emerald-400 mt-1">Telemetry active</div>
+          </div>
+
+          <div class="bg-slate-900/90 border border-slate-800 p-4 rounded-xl">
+            <span class="text-xs text-slate-400 font-mono">SECURITY ALERTS</span>
+            <div class="text-2xl font-bold text-rose-400 mt-1">${kpis.alertsCount}</div>
+            <div class="text-[11px] text-rose-300 mt-1">${kpis.criticalCount} Critical | ${kpis.highCount} High</div>
+          </div>
+
+          <div class="bg-slate-900/90 border border-slate-800 p-4 rounded-xl">
+            <span class="text-xs text-slate-400 font-mono">4xx/5xx ERRORS</span>
+            <div class="text-2xl font-bold text-amber-400 mt-1">${kpis.errorCount}</div>
+            <div class="text-[11px] text-amber-300 mt-1">${kpis.errorRate}% of total traffic</div>
+          </div>
+
+          <div class="bg-slate-900/90 border border-slate-800 p-4 rounded-xl">
+            <span class="text-xs text-slate-400 font-mono">UNIQUE SOURCE IPS</span>
+            <div class="text-2xl font-bold text-cyan-400 mt-1">${kpis.uniqueIps}</div>
+            <div class="text-[11px] text-slate-400 mt-1">${kpis.threatIps} Flagged Threat Actors</div>
+          </div>
+        </div>
+
+        <!-- Charts Row -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          <!-- Timeline Histogram -->
+          <div class="lg:col-span-2 bg-slate-900/90 border border-slate-800 p-4 rounded-xl">
+            <div class="flex items-center justify-between mb-3">
+              <h3 class="text-xs font-bold font-mono text-slate-300 uppercase tracking-wider">
+                HTTP Response Codes & Activity Volume
+              </h3>
+              <span class="text-[10px] text-slate-500 font-mono">Recent Event Distribution</span>
+            </div>
+            <div class="h-48 relative">
+              <canvas id="siem-timeline-chart"></canvas>
+            </div>
+          </div>
+
+          <!-- Attack Categories Donut -->
+          <div class="bg-slate-900/90 border border-slate-800 p-4 rounded-xl">
+            <div class="flex items-center justify-between mb-3">
+              <h3 class="text-xs font-bold font-mono text-slate-300 uppercase tracking-wider">
+                Threat Breakdown
+              </h3>
+              <span class="text-[10px] text-slate-500 font-mono">IoC Classification</span>
+            </div>
+            <div class="h-48 relative flex items-center justify-center">
+              <canvas id="siem-category-chart"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- Search Bar & Filters -->
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 space-y-3">
+          <div class="flex flex-col md:flex-row gap-3">
+            <div class="relative flex-1">
+              <input 
+                type="text" 
+                id="siem-search-input" 
+                value="${escapeHtml(store.searchQuery)}"
+                placeholder="Search queries: status:401 | uri:*union* | ip:198.51.100.44 | rule:RULE-SEC-001 | free-text" 
+                class="w-full bg-slate-950 border border-slate-700 rounded-lg pl-9 pr-8 py-2 text-xs font-mono text-slate-200 placeholder-slate-500 focus:outline-none focus:border-emerald-500"
+              />
+              <svg class="w-4 h-4 text-slate-500 absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+              ${store.searchQuery ? `
+                <button id="siem-clear-search" class="absolute right-2.5 top-2 text-slate-500 hover:text-slate-300 text-xs font-bold">✕</button>
+              ` : ''}
+            </div>
+
+            <!-- Quick Filter Badges -->
+            <div class="flex flex-wrap items-center gap-1.5 text-xs font-mono">
+              <button class="filter-pill px-2.5 py-1.5 rounded-lg border transition-all ${store.activeFilterCategory === 'all' ? 'bg-emerald-600 text-white border-emerald-500' : 'bg-slate-950 text-slate-400 border-slate-800 hover:text-slate-200'}" data-cat="all">
+                All (${store.logs.length})
+              </button>
+              <button class="filter-pill px-2.5 py-1.5 rounded-lg border transition-all ${store.activeFilterCategory === 'alerts' ? 'bg-rose-600 text-white border-rose-500' : 'bg-slate-950 text-rose-400 border-slate-800 hover:bg-slate-800'}" data-cat="alerts">
+                🚨 Alerts (${kpis.alertsCount})
+              </button>
+              <button class="filter-pill px-2.5 py-1.5 rounded-lg border transition-all ${store.activeFilterCategory === 'sqli' ? 'bg-cyan-600 text-white border-cyan-500' : 'bg-slate-950 text-cyan-400 border-slate-800 hover:bg-slate-800'}" data-cat="sqli">
+                SQLi
+              </button>
+              <button class="filter-pill px-2.5 py-1.5 rounded-lg border transition-all ${store.activeFilterCategory === 'xss' ? 'bg-amber-600 text-white border-amber-500' : 'bg-slate-950 text-amber-400 border-slate-800 hover:bg-slate-800'}" data-cat="xss">
+                XSS
+              </button>
+              <button class="filter-pill px-2.5 py-1.5 rounded-lg border transition-all ${store.activeFilterCategory === 'brute_force' ? 'bg-purple-600 text-white border-purple-500' : 'bg-slate-950 text-purple-400 border-slate-800 hover:bg-slate-800'}" data-cat="brute_force">
+                Brute Force
+              </button>
+              <button class="filter-pill px-2.5 py-1.5 rounded-lg border transition-all ${store.activeFilterCategory === 'errors' ? 'bg-red-900 text-white border-red-700' : 'bg-slate-950 text-slate-400 border-slate-800 hover:bg-slate-800'}" data-cat="errors">
+                4xx/5xx Errors
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Main Log Explorer Table -->
+        <div class="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-xl">
+          <div class="px-4 py-3 border-b border-slate-800 flex items-center justify-between text-xs">
+            <div class="font-mono text-slate-300">
+              Showing <span class="text-emerald-400 font-bold">${filteredLogs.length}</span> matching events
+            </div>
+            <div class="text-[11px] text-slate-500">
+              Click any log row to open the Forensic Inspector
+            </div>
+          </div>
+
+          <div class="overflow-x-auto max-h-[520px] overflow-y-auto">
+            <table class="w-full text-left font-mono text-xs">
+              <thead class="bg-slate-950 text-slate-400 border-b border-slate-800 sticky top-0 z-10">
+                <tr>
+                  <th class="p-3">Time</th>
+                  <th class="p-3">Client IP</th>
+                  <th class="p-3">Method</th>
+                  <th class="p-3">Request URI / Path</th>
+                  <th class="p-3">Status</th>
+                  <th class="p-3">IoC Detection / Classification</th>
+                  <th class="p-3 text-right">Action</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-800/80 text-slate-200">
+                ${filteredLogs.length === 0 ? `
+                  <tr>
+                    <td colspan="7" class="p-8 text-center text-slate-500 font-sans">
+                      No logs match your current search query or filter.
+                    </td>
+                  </tr>
+                ` : filteredLogs.map(log => this.renderLogRow(log)).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    `;
+
+    this.bindEvents();
+    this.renderCharts(store.logs);
+  }
+
+  renderLogRow(log) {
+    const statusBadges = {
+      200: 'bg-emerald-950 text-emerald-400 border-emerald-800',
+      201: 'bg-emerald-950 text-emerald-400 border-emerald-800',
+      302: 'bg-cyan-950 text-cyan-300 border-cyan-800',
+      401: 'bg-rose-950 text-rose-300 border-rose-800 font-bold animate-pulse',
+      403: 'bg-amber-950 text-amber-300 border-amber-800',
+      404: 'bg-slate-800 text-slate-400 border-slate-700',
+      500: 'bg-rose-950 text-rose-400 border-rose-700 font-bold'
+    };
+
+    const isAlert = log.ioc_detected;
+    const rowBg = isAlert ? 'bg-rose-950/10 hover:bg-rose-950/20' : 'hover:bg-slate-800/40';
+
+    return `
+      <tr class="log-row cursor-pointer transition-colors ${rowBg}" data-log-id="${log.id}">
+        <td class="p-3 text-slate-400 whitespace-nowrap text-[11px]">
+          ${formatRelativeTime(log.timestamp)}
+        </td>
+        <td class="p-3 text-cyan-300 whitespace-nowrap font-medium">
+          ${escapeHtml(log.client_ip)}
+        </td>
+        <td class="p-3 font-bold whitespace-nowrap ${log.method === 'POST' ? 'text-purple-400' : 'text-emerald-400'}">
+          ${log.method}
+        </td>
+        <td class="p-3 max-w-xs truncate text-slate-200" title="${escapeHtml(log.uri)}">
+          <span class="text-slate-100">${escapeHtml(log.uri)}</span>
+          ${log.query_params && Object.keys(log.query_params).length > 0 ? `
+            <span class="text-amber-400/90 text-[11px]">?${escapeHtml(new URLSearchParams(log.query_params).toString())}</span>
+          ` : ''}
+        </td>
+        <td class="p-3 whitespace-nowrap">
+          <span class="px-2 py-0.5 rounded border text-[11px] font-bold ${statusBadges[log.status] || 'bg-slate-800 text-slate-300'}">
+            ${log.status}
+          </span>
+        </td>
+        <td class="p-3 whitespace-nowrap">
+          ${log.ioc_detected ? `
+            <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded border text-[11px] font-semibold ${this.getSeverityBadgeClass(log.severity)}">
+              <span class="w-1.5 h-1.5 rounded-full bg-current"></span>
+              ${escapeHtml(log.attack_type || log.matched_rule || 'Threat Detected')}
+            </span>
+          ` : `
+            <span class="text-slate-500 text-[11px]">Benign Traffic</span>
+          `}
+        </td>
+        <td class="p-3 text-right whitespace-nowrap">
+          <button class="inspect-btn bg-slate-800 hover:bg-slate-700 text-slate-300 px-2.5 py-1 rounded border border-slate-700 text-[11px]" data-log-id="${log.id}">
+            Inspect
+          </button>
+        </td>
+      </tr>
+    `;
+  }
+
+  getSeverityBadgeClass(sev) {
+    switch (sev) {
+      case 'CRITICAL': return 'bg-rose-950 text-rose-300 border-rose-700';
+      case 'HIGH': return 'bg-orange-950 text-orange-300 border-orange-700';
+      case 'MEDIUM': return 'bg-amber-950 text-amber-300 border-amber-700';
+      default: return 'bg-cyan-950 text-cyan-300 border-cyan-700';
+    }
+  }
+
+  calculateKPIs(logs) {
+    let alertsCount = 0;
+    let criticalCount = 0;
+    let highCount = 0;
+    let errorCount = 0;
+    const ipSet = new Set();
+    const threatIpSet = new Set();
+
+    for (const log of logs) {
+      ipSet.add(log.client_ip);
+      if (log.status >= 400) errorCount++;
+      if (log.ioc_detected) {
+        alertsCount++;
+        threatIpSet.add(log.client_ip);
+        if (log.severity === 'CRITICAL') criticalCount++;
+        if (log.severity === 'HIGH') highCount++;
+      }
+    }
+
+    const errorRate = logs.length > 0 ? Math.round((errorCount / logs.length) * 100) : 0;
+
+    return {
+      totalEvents: logs.length,
+      alertsCount,
+      criticalCount,
+      highCount,
+      errorCount,
+      errorRate,
+      uniqueIps: ipSet.size,
+      threatIps: threatIpSet.size
+    };
+  }
+
+  renderCharts(logs) {
+    // Check if Chart.js is available
+    if (typeof Chart === 'undefined') return;
+
+    // 1. Status Codes Histogram
+    const timelineCanvas = document.getElementById('siem-timeline-chart');
+    if (timelineCanvas) {
+      const counts200 = logs.filter(l => l.status >= 200 && l.status < 300).length;
+      const counts300 = logs.filter(l => l.status >= 300 && l.status < 400).length;
+      const counts401 = logs.filter(l => l.status === 401).length;
+      const counts4xx = logs.filter(l => l.status >= 400 && l.status < 500 && l.status !== 401).length;
+      const counts500 = logs.filter(l => l.status >= 500).length;
+
+      if (this.statusChart) this.statusChart.destroy();
+
+      this.statusChart = new Chart(timelineCanvas, {
+        type: 'bar',
+        data: {
+          labels: ['2xx OK', '3xx Redirect', '401 Unauthorized (Auth)', 'Other 4xx Client', '500 Server Error'],
+          datasets: [{
+            label: 'Event Count',
+            data: [counts200, counts300, counts401, counts4xx, counts500],
+            backgroundColor: [
+              '#10b981', // green
+              '#06b6d4', // cyan
+              '#f43f5e', // rose (spikes for brute force)
+              '#f59e0b', // amber
+              '#8b5cf6'  // purple
+            ],
+            borderRadius: 6
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              grid: { color: 'rgba(255, 255, 255, 0.05)' },
+              ticks: { color: '#94a3b8', font: { family: 'monospace', size: 10 } }
+            },
+            x: {
+              grid: { display: false },
+              ticks: { color: '#94a3b8', font: { family: 'monospace', size: 10 } }
+            }
+          }
+        }
+      });
+    }
+
+    // 2. Category Donut
+    const categoryCanvas = document.getElementById('siem-category-chart');
+    if (categoryCanvas) {
+      const sqliCount = logs.filter(l => l.category === 'sqli').length;
+      const xssCount = logs.filter(l => l.category === 'xss').length;
+      const bruteCount = logs.filter(l => l.category === 'brute_force').length;
+      const reconCount = logs.filter(l => l.category === 'recon').length;
+      const legitCount = logs.filter(l => l.category === 'legitimate' || !l.category).length;
+
+      if (this.categoryChart) this.categoryChart.destroy();
+
+      this.categoryChart = new Chart(categoryCanvas, {
+        type: 'doughnut',
+        data: {
+          labels: ['SQL Injection', 'Cross-Site Scripting', 'Brute Force', 'Recon / Scanner', 'Legitimate'],
+          datasets: [{
+            data: [sqliCount, xssCount, bruteCount, reconCount, legitCount],
+            backgroundColor: ['#06b6d4', '#f59e0b', '#ec4899', '#a855f7', '#10b981'],
+            borderColor: '#0f172a',
+            borderWidth: 2
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: 'bottom',
+              labels: {
+                boxWidth: 10,
+                color: '#94a3b8',
+                font: { family: 'monospace', size: 9 }
+              }
+            }
+          }
+        }
+      });
+    }
+  }
+
+  bindEvents() {
+    // Search input
+    const searchInput = document.getElementById('siem-search-input');
+    if (searchInput) {
+      searchInput.oninput = (e) => {
+        store.setSearchQuery(e.target.value);
+      };
+    }
+
+    const clearSearch = document.getElementById('siem-clear-search');
+    if (clearSearch) {
+      clearSearch.onclick = () => {
+        store.setSearchQuery('');
+      };
+    }
+
+    // Quick category pills
+    const pills = document.querySelectorAll('.filter-pill');
+    pills.forEach(pill => {
+      pill.onclick = () => {
+        const cat = pill.getAttribute('data-cat');
+        store.setFilterCategory(cat);
+      };
+    });
+
+    // Generate Benign Log button
+    const btnGen = document.getElementById('siem-btn-generate');
+    if (btnGen) {
+      btnGen.onclick = () => {
+        logEngine.generateBenignLog();
+        showToast("Benign log generated into stream.", "info");
+      };
+    }
+
+    // Reset button
+    const btnReset = document.getElementById('siem-btn-reset');
+    if (btnReset) {
+      btnReset.onclick = async () => {
+        if (confirm("Reset SIEM logs to original forensic baseline dataset?")) {
+          await logEngine.resetToBaseline();
+          showToast("SIEM logs restored to baseline.", "success");
+        }
+      };
+    }
+
+    // Exports
+    const expApache = document.getElementById('siem-export-apache');
+    const expJson = document.getElementById('siem-export-json');
+    const expCsv = document.getElementById('siem-export-csv');
+
+    if (expApache) {
+      expApache.onclick = () => {
+        downloadFile(logEngine.exportApacheLog(), 'access_combined.log', 'text/plain');
+        showToast("Downloaded access_combined.log", "success");
+      };
+    }
+    if (expJson) {
+      expJson.onclick = () => {
+        downloadFile(logEngine.exportJSON(), 'siem_telemetry.json', 'application/json');
+        showToast("Downloaded siem_telemetry.json", "success");
+      };
+    }
+    if (expCsv) {
+      expCsv.onclick = () => {
+        downloadFile(logEngine.exportCSV(), 'siem_telemetry.csv', 'text/csv');
+        showToast("Downloaded siem_telemetry.csv", "success");
+      };
+    }
+
+    // Log row clicking / Inspect buttons
+    const logRows = document.querySelectorAll('.log-row');
+    logRows.forEach(row => {
+      row.onclick = (e) => {
+        const id = row.getAttribute('data-log-id');
+        const log = store.logs.find(l => l.id === id);
+        if (log) store.selectLog(log);
+      };
+    });
+
+    const inspectBtns = document.querySelectorAll('.inspect-btn');
+    inspectBtns.forEach(btn => {
+      btn.onclick = (e) => {
+        e.stopPropagation();
+        const id = btn.getAttribute('data-log-id');
+        const log = store.logs.find(l => l.id === id);
+        if (log) store.selectLog(log);
+      };
+    });
+  }
+
+  showLogInspectorModal(log) {
+    sfx.playClick();
+    const existingModal = document.getElementById('log-inspector-modal');
+    if (existingModal) existingModal.remove();
+
+    const rawApache = toApacheCombinedLog(log);
+    const decodedUri = decodePayloadSafely(log.uri + (log.query_params ? '?' + new URLSearchParams(log.query_params).toString() : ''));
+    const decodedBody = log.body ? decodePayloadSafely(log.body) : null;
+
+    const modal = document.createElement('div');
+    modal.id = 'log-inspector-modal';
+    modal.className = "fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md";
+    modal.innerHTML = `
+      <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-3xl w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden animate-fade-in">
+        <!-- Modal Header -->
+        <div class="px-6 py-4 bg-slate-950 border-b border-slate-800 flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <span class="w-3 h-3 rounded-full ${log.ioc_detected ? 'bg-rose-500 animate-pulse' : 'bg-emerald-500'}"></span>
+            <div>
+              <h3 class="text-sm font-bold text-white font-mono flex items-center gap-2">
+                Log Event Inspector: <span class="text-cyan-400">${escapeHtml(log.id)}</span>
+              </h3>
+              <span class="text-xs text-slate-400 font-mono">${escapeHtml(log.timestamp)}</span>
+            </div>
+          </div>
+          <button type="button" class="close-inspector-btn text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition-all text-sm font-bold">
+            ✕
+          </button>
+        </div>
+
+        <!-- Modal Body Content -->
+        <div class="flex-1 overflow-y-auto p-6 space-y-5 text-xs font-mono">
+          <!-- IoC Detection Banner (if matched) -->
+          ${log.ioc_detected ? `
+            <div class="bg-rose-950/40 border border-rose-600/60 rounded-xl p-4 space-y-2">
+              <div class="flex items-center justify-between">
+                <span class="font-bold text-rose-300 flex items-center gap-1.5">
+                  <svg class="w-4 h-4 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                  ${escapeHtml(log.rule_name || log.matched_rule || 'Threat Alert')}
+                </span>
+                <span class="px-2 py-0.5 rounded text-[10px] font-bold ${this.getSeverityBadgeClass(log.severity)}">
+                  ${escapeHtml(log.severity)} SEVERITY
+                </span>
+              </div>
+              <p class="text-slate-300 font-sans leading-relaxed text-xs">
+                ${escapeHtml(log.ioc_details || 'Malicious attack signature matched incoming request parameter or headers.')}
+              </p>
+            </div>
+          ` : `
+            <div class="bg-emerald-950/30 border border-emerald-700/40 rounded-xl p-3 text-emerald-300 flex items-center gap-2">
+              <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+              <span>Benign Event: No known attack signatures matched this request line.</span>
+            </div>
+          `}
+
+          <!-- Quick Parameters Grid -->
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-2.5">
+            <div class="bg-slate-950 p-2.5 rounded-lg border border-slate-800">
+              <span class="text-slate-500 text-[10px] block">CLIENT IP</span>
+              <span class="text-cyan-400 font-bold">${escapeHtml(log.client_ip)}</span>
+            </div>
+            <div class="bg-slate-950 p-2.5 rounded-lg border border-slate-800">
+              <span class="text-slate-500 text-[10px] block">HTTP METHOD</span>
+              <span class="text-emerald-400 font-bold">${escapeHtml(log.method)}</span>
+            </div>
+            <div class="bg-slate-950 p-2.5 rounded-lg border border-slate-800">
+              <span class="text-slate-500 text-[10px] block">STATUS CODE</span>
+              <span class="text-amber-400 font-bold">${escapeHtml(log.status)}</span>
+            </div>
+            <div class="bg-slate-950 p-2.5 rounded-lg border border-slate-800">
+              <span class="text-slate-500 text-[10px] block">RESPONSE BYTES</span>
+              <span class="text-slate-300 font-bold">${escapeHtml(log.bytes_sent)} B</span>
+            </div>
+          </div>
+
+          <!-- Raw Apache / Nginx Combined Log String -->
+          <div class="space-y-1">
+            <div class="flex items-center justify-between text-slate-400">
+              <span>Raw Combined Log Format (NCSA/Apache/Nginx):</span>
+              <button class="copy-raw-btn text-[11px] text-cyan-400 hover:text-cyan-300 underline" data-copy="${escapeHtml(rawApache)}">
+                Copy Line
+              </button>
+            </div>
+            <div class="bg-slate-950 border border-slate-800 rounded-lg p-3 text-emerald-300 select-all break-all overflow-x-auto text-[11px]">
+              ${escapeHtml(rawApache)}
+            </div>
+          </div>
+
+          <!-- Decoded URI & Query String Forensics -->
+          <div class="space-y-1">
+            <span class="text-slate-400 block">Decoded Request URI & Parameters:</span>
+            <div class="bg-slate-950 border border-slate-800 rounded-lg p-3 text-amber-300 select-all break-all overflow-x-auto text-[11px]">
+              ${escapeHtml(decodedUri)}
+            </div>
+          </div>
+
+          ${decodedBody ? `
+            <!-- Decoded Request Body (POST payload) -->
+            <div class="space-y-1">
+              <span class="text-slate-400 block">Decoded POST Body Payload:</span>
+              <div class="bg-slate-950 border border-slate-800 rounded-lg p-3 text-rose-300 select-all break-all overflow-x-auto text-[11px]">
+                ${escapeHtml(decodedBody)}
+              </div>
+            </div>
+          ` : ''}
+
+          <!-- Headers Forensics -->
+          <div class="bg-slate-950 border border-slate-800 rounded-xl p-3 space-y-1.5">
+            <span class="text-slate-400 block font-bold mb-1">HTTP Request Headers Telemetry:</span>
+            <div class="text-[11px] text-slate-300">
+              <span class="text-slate-500">User-Agent:</span> <span class="break-all">${escapeHtml(log.user_agent || '-')}</span>
+            </div>
+            <div class="text-[11px] text-slate-300">
+              <span class="text-slate-500">Referer:</span> <span class="break-all">${escapeHtml(log.referer || '-')}</span>
+            </div>
+            <div class="text-[11px] text-slate-300">
+              <span class="text-slate-500">Protocol:</span> ${escapeHtml(log.protocol || 'HTTP/1.1')}
+            </div>
+          </div>
+        </div>
+
+        <!-- Modal Footer -->
+        <div class="px-6 py-3 bg-slate-950 border-t border-slate-800 flex items-center justify-between text-xs">
+          <span class="text-slate-500">SOC Triage Level 1 Assistant</span>
+          <button type="button" class="close-inspector-btn bg-slate-800 hover:bg-slate-700 text-white font-medium px-4 py-2 rounded-lg transition-all">
+            Close Inspector
+          </button>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(modal);
+
+    modal.querySelectorAll('.close-inspector-btn').forEach(btn => {
+      btn.onclick = () => modal.remove();
+    });
+
+    const copyBtn = modal.querySelector('.copy-raw-btn');
+    if (copyBtn) {
+      copyBtn.onclick = () => {
+        navigator.clipboard.writeText(rawApache);
+        showToast("Raw log copied to clipboard!", "success");
+      };
+    }
+  }
+}
+
+export const socSiem = new SocSiem();
