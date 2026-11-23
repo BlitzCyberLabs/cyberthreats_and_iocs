@@ -574,7 +574,7 @@ class TargetApp {
                 <tr class="bg-emerald-950/20 text-emerald-300">
                   <td class="p-2.5 font-bold">1</td>
                   <td class="p-2.5 font-bold">admin</td>
-                  <td class="p-2.5">dragon123 <span class="text-[10px] bg-emerald-900 px-1 py-0.5 rounded text-white font-sans ml-1">FLAG: SOC{sqli_un10n_3xf1ltr4t10n_succ3ss}</span></td>
+                  <td class="p-2.5">dragon123 <span class="text-[10px] bg-emerald-900 px-1 py-0.5 rounded text-white font-sans ml-1">FLAG: BLITZ{5ql1_un10n_d8_3xf1l_9f82c4a17e}</span></td>
                   <td class="p-2.5">admin@cybervault.local</td>
                   <td class="p-2.5 font-bold">SuperAdmin</td>
                 </tr>
@@ -596,7 +596,7 @@ class TargetApp {
             </table>
           </div>
           <div class="bg-slate-950 p-3 rounded-lg border border-slate-800 text-xs text-slate-400 flex items-center justify-between">
-            <span>Copy Flag: <code class="text-emerald-400 font-bold select-all">SOC{sqli_un10n_3xf1ltr4t10n_succ3ss}</code></span>
+            <span>Copy Flag: <code class="text-emerald-400 font-bold select-all">BLITZ{5ql1_un10n_d8_3xf1l_9f82c4a17e}</code></span>
             <span class="text-cyan-400">Telemetry logged to SIEM!</span>
           </div>
         </div>
@@ -671,7 +671,8 @@ class TargetApp {
           fbBox.innerHTML = `
             <strong>✓ Authentication Successful (HTTP 302)!</strong>
             <br>Welcome SuperAdmin! Session Token: <code class="text-white">adm_sess_940f81d</code>
-            ${isSqliBypass ? '<br><span class="text-amber-400 mt-1 block">⚠️ Authentication Bypassed via SQL Injection!</span>' : ''}
+            <br><span class="text-emerald-400 font-bold block mt-1">FLAG: <code class="select-all">BLITZ{bruf3_4uth_c0mpr0m153_6e1a4d88}</code></span>
+            ${isSqliBypass ? '<span class="text-amber-400 mt-1 block">⚠️ Authentication Bypassed via SQL Injection!</span>' : ''}
           `;
           sfx.playSuccess();
         } else {
@@ -803,6 +804,7 @@ class TargetApp {
 
       if (isSuccess) {
         this.logToSimConsole(`[+] [SUCCESS] Account cracked! User: "${targetUser}" | Password: "${pwd}" (HTTP 302 Redirect)`, "success");
+        this.logToSimConsole(`[+] Flag Discovered: BLITZ{bruf3_4uth_c0mpr0m153_6e1a4d88}`, "success");
         sfx.playSuccess();
         showToast(`Brute force success! Discovered password: ${pwd}`, "success");
       } else {
@@ -958,7 +960,7 @@ class TargetApp {
           </div>
           <div class="bg-emerald-950/60 p-3 rounded-lg border border-emerald-600 text-emerald-300">
             <span class="font-bold">🎉 Challenge Flag Unlocked:</span>
-            <div class="text-emerald-400 font-bold select-all mt-1">SOC{xss_cl13nt_s1d3_p4yl04d_f0und}</div>
+            <div class="text-emerald-400 font-bold select-all mt-1">BLITZ{x55_cl13nt_3x3c_7b39d104fa}</div>
           </div>
         </div>
 

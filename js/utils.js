@@ -266,16 +266,3 @@ export function downloadFile(content, filename, mimeType = 'text/plain') {
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
 }
-
-/**
- * Confetti cannon celebration using canvas-confetti
- */
-export function triggerCelebration() {
-  if (window.confetti) {
-    window.confetti({
-      particleCount: 100,
-      spread: 70,
-      origin: { y: 0.6 }
-    });
-  }
-}

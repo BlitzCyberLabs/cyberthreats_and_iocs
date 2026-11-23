@@ -1,48 +1,18 @@
 /**
  * Global State Store for SOC Lab
- * Manages logs, user progress, scores, active views, and notification events.
+ * Manages logs, active views, filters, and UI selection events.
  */
 
-const STORAGE_KEY_PROGRESS = 'soc_lab_progress_v1';
-const STORAGE_KEY_LOGS = 'soc_lab_logs_v1';
+const STORAGE_KEY_LOGS = 'blitz_soc_logs_v1';
 
 class Store {
   constructor() {
     this.listeners = new Map();
-    this.activeTab = 'lab'; // 'lab' | 'target' | 'siem' | 'cheatsheet' | 'progress'
+    this.activeTab = 'target'; // 'target' | 'siem'
     this.logs = [];
-    this.completedQuestions = {};
-    this.totalScore = 0;
-    this.maxScore = 500;
     this.selectedLog = null;
     this.searchQuery = '';
     this.activeFilterCategory = 'all';
-
-    this.loadState();
-  }
-
-  loadState() {
-    try {
-      const savedProgress = localStorage.getItem(STORAGE_KEY_PROGRESS);
-      if (savedProgress) {
-        const parsed = JSON.parse(savedProgress);
-        this.completedQuestions = parsed.completedQuestions || {};
-        this.totalScore = parsed.totalScore || 0;
-      }
-    } catch (e) {
-      console.warn("Could not load progress from localStorage", e);
-    }
-  }
-
-  saveProgress() {
-    try {
-      localStorage.setItem(STORAGE_KEY_PROGRESS, JSON.stringify({
-        completedQuestions: this.completedQuestions,
-        totalScore: this.totalScore
-      }));
-    } catch (e) {
-      console.warn("Could not save progress to localStorage", e);
-    }
   }
 
   saveLogs() {
@@ -67,22 +37,12 @@ class Store {
   }
 
   addLog(log) {
-    this.logs.unshift(log); // Prepend to top
-    // Cap in-memory logs to 1000 to keep browser responsive
+    this.logs.unshift(log); // Prepend newest log
     if (this.logs.length > 1000) {
       this.logs.pop();
     }
     this.saveLogs();
     this.emit('logAdded', log);
-    this.emit('logsUpdated', this.logs);
-  }
-
-  addLogsBatch(newLogs) {
-    this.logs = [...newLogs, ...this.logs];
-    if (this.logs.length > 1000) {
-      this.logs = this.logs.slice(0, 1000);
-    }
-    this.saveLogs();
     this.emit('logsUpdated', this.logs);
   }
 
@@ -101,34 +61,7 @@ class Store {
     this.emit('filterChanged', { query: this.searchQuery, category: this.activeFilterCategory });
   }
 
-  recordAnswer(questionId, points = 50) {
-    if (!this.completedQuestions[questionId]) {
-      this.completedQuestions[questionId] = {
-        completedAt: new Date().toISOString(),
-        pointsAwarded: points
-      };
-      this.totalScore += points;
-      this.saveProgress();
-      this.emit('progressUpdated', {
-        completedQuestions: this.completedQuestions,
-        totalScore: this.totalScore
-      });
-      return true;
-    }
-    return false;
-  }
-
-  resetProgress() {
-    this.completedQuestions = {};
-    this.totalScore = 0;
-    this.saveProgress();
-    this.emit('progressUpdated', {
-      completedQuestions: this.completedQuestions,
-      totalScore: this.totalScore
-    });
-  }
-
-  // Pub/Sub
+  // Event Pub/Sub
   on(event, callback) {
     if (!this.listeners.has(event)) {
       this.listeners.set(event, []);

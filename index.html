@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>SOC Analyst 101: Web Attack Forensics & IoC Hunting</title>
+  <title>SOC Web Attack Forensics & IoC Hunting Lab</title>
   <meta name="description" content="Interactive SOC Training Lab: Master Indicators of Compromise (IoCs) for SQL Injection, Cross-Site Scripting (XSS), and Login Brute Force with an interactive victim web app and SIEM dashboard." />
 
   <!-- Tailwind CSS CDN -->
@@ -13,14 +13,6 @@
       darkMode: 'class',
       theme: {
         extend: {
-          colors: {
-            thm: {
-              green: '#10b981',
-              dark: '#0a0e17',
-              card: '#0f172a',
-              border: '#1e293b'
-            }
-          },
           fontFamily: {
             sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
             mono: ['JetBrains Mono', 'Fira Code', 'Courier New', 'monospace']
@@ -35,11 +27,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
 
-  <!-- Chart.js CDN for SIEM analytics -->
+  <!-- Chart.js CDN for SIEM Analytics -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-
-  <!-- Canvas Confetti CDN -->
-  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
 
   <!-- Custom Styles -->
   <link rel="stylesheet" href="css/styles.css" />
@@ -52,65 +41,38 @@
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="flex items-center justify-between h-16">
         
-        <!-- Brand & Room Title -->
+        <!-- Brand & Title -->
         <div class="flex items-center gap-3">
           <div class="w-9 h-9 rounded-lg bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 font-bold font-mono text-lg shadow-lg shadow-emerald-500/10">
             🛡️
           </div>
           <div>
             <div class="flex items-center gap-2">
-              <span class="text-xs font-mono font-bold px-1.5 py-0.5 rounded bg-emerald-950 text-emerald-400 border border-emerald-800">SOC DEFENSE RANGE</span>
-              <span class="text-xs text-slate-400 font-mono hidden sm:inline">Web Attack Forensics</span>
+              <span class="text-xs font-mono font-bold px-1.5 py-0.5 rounded bg-emerald-950 text-emerald-400 border border-emerald-800">DEFENSE RANGE</span>
+              <span class="text-xs text-slate-400 font-mono hidden sm:inline">Web Attack Forensics & SIEM</span>
             </div>
             <h1 class="text-sm sm:text-base font-bold text-white tracking-tight">
-              SOC Analyst 101: Web Attack Forensics & IoC Hunting
+              SOC Analyst Lab: SQLi • XSS • Brute Force IoC Hunting
             </h1>
           </div>
         </div>
 
-        <!-- Progress Bar, Points, & Audio Toggle -->
-        <div class="flex items-center gap-4">
-          <!-- Live Score & Progress -->
-          <div class="hidden md:flex flex-col items-end">
-            <div class="flex items-center gap-2 text-xs font-mono">
-              <span id="header-progress-pct" class="text-emerald-400 font-bold">0% Complete</span>
-              <span class="text-slate-600">|</span>
-              <span id="header-score-text" class="text-cyan-400 font-bold">0 / 500 PTS</span>
-            </div>
-            <div class="w-36 h-1.5 bg-slate-800 rounded-full mt-1.5 overflow-hidden">
-              <div id="header-progress-bar" class="h-full bg-gradient-to-r from-emerald-500 to-cyan-400 rounded-full transition-all duration-500" style="width: 0%"></div>
-            </div>
-          </div>
-
-          <!-- Sound FX Toggle -->
-          <button id="btn-toggle-sound" class="p-2 rounded-lg bg-slate-900 border border-slate-800 hover:border-slate-700 text-slate-300 transition-all" title="Toggle Sound FX">
-            <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"/></svg>
+        <!-- Right Side Nav Actions -->
+        <div class="flex items-center gap-3">
+          <!-- Guide Modal Button -->
+          <button id="btn-open-guide" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 hover:border-slate-700 text-xs font-mono text-cyan-300 hover:text-cyan-200 transition-all shadow-sm">
+            <span>📖 Lab Instructions & Cheat Sheet</span>
           </button>
-
-          <!-- GitHub repo shortcut -->
-          <a href="https://github.com" target="_blank" rel="noopener noreferrer" class="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 hover:border-slate-700 text-xs font-mono text-slate-300 hover:text-white transition-all">
-            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/></svg>
-            <span>GitHub</span>
-          </a>
         </div>
       </div>
 
       <!-- Navigation Tabs Bar -->
-      <nav class="flex items-center gap-1 overflow-x-auto py-2 border-t border-slate-800/60 no-scrollbar">
-        <button class="main-nav-btn px-4 py-2 rounded-lg text-xs font-semibold bg-emerald-600 text-white shadow-lg shadow-emerald-900/40 transition-all flex items-center gap-2" data-tab="lab">
-          <span>📚 Tasks & Walkthrough</span>
-        </button>
-        <button class="main-nav-btn px-4 py-2 rounded-lg text-xs font-medium text-slate-400 hover:text-slate-100 hover:bg-slate-800/60 transition-all flex items-center gap-2" data-tab="target">
+      <nav class="flex items-center gap-2 py-2 border-t border-slate-800/60">
+        <button class="main-nav-btn px-4 py-2 rounded-lg text-xs font-semibold bg-emerald-600 text-white shadow-lg shadow-emerald-900/40 transition-all flex items-center gap-2" data-tab="target">
           <span>🎯 Target Application (Victim Sandbox)</span>
         </button>
         <button class="main-nav-btn px-4 py-2 rounded-lg text-xs font-medium text-slate-400 hover:text-slate-100 hover:bg-slate-800/60 transition-all flex items-center gap-2" data-tab="siem">
-          <span>🛡️ SOC SIEM Console</span>
-        </button>
-        <button class="main-nav-btn px-4 py-2 rounded-lg text-xs font-medium text-slate-400 hover:text-slate-100 hover:bg-slate-800/60 transition-all flex items-center gap-2" data-tab="cheatsheet">
-          <span>📖 IoC Cheat Sheet</span>
-        </button>
-        <button class="main-nav-btn px-4 py-2 rounded-lg text-xs font-medium text-slate-400 hover:text-slate-100 hover:bg-slate-800/60 transition-all flex items-center gap-2" data-tab="progress">
-          <span>🏆 Progress & Badges</span>
+          <span>🛡️ SOC SIEM Console (Log Telemetry)</span>
         </button>
       </nav>
     </div>
@@ -119,54 +81,14 @@
   <!-- Main Viewports -->
   <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
     
-    <!-- Tab 1: Tasks & Walkthrough -->
-    <section id="view-lab" class="tab-view-container space-y-6">
-      <div class="bg-gradient-to-r from-emerald-950/40 via-slate-900 to-slate-900 border border-emerald-500/30 rounded-2xl p-6 shadow-2xl">
-        <div class="flex flex-wrap items-center justify-between gap-4">
-          <div class="space-y-1">
-            <div class="flex items-center gap-2">
-              <span class="text-xs px-2 py-0.5 rounded-full bg-emerald-900/80 text-emerald-300 font-mono border border-emerald-700">Difficulty: Beginner / Intermediate</span>
-              <span class="text-xs px-2 py-0.5 rounded-full bg-cyan-900/80 text-cyan-300 font-mono border border-cyan-700">Duration: 45 Mins</span>
-            </div>
-            <h2 class="text-xl font-extrabold text-white">Interactive SOC Training Room</h2>
-            <p class="text-xs text-slate-300 max-w-2xl leading-relaxed">
-              Welcome to the Security Operations Center. In this hands-on lab, you will learn how to detect, analyze, and investigate Indicators of Compromise (IoCs) for <strong>SQL Injection (SQLi)</strong>, <strong>Cross-Site Scripting (XSS)</strong>, and <strong>Authentication Brute Force</strong> in web access logs.
-            </p>
-          </div>
-          <div class="flex items-center gap-2">
-            <button onclick="document.querySelector('[data-tab=target]').click()" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-4 py-2.5 rounded-xl transition-all shadow-lg shadow-emerald-900/50 flex items-center gap-1.5">
-              <span>Open Target App</span>
-              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
-            </button>
-            <button onclick="document.querySelector('[data-tab=siem]').click()" class="bg-slate-800 hover:bg-slate-700 text-cyan-300 text-xs font-bold px-4 py-2.5 rounded-xl transition-all border border-slate-700 flex items-center gap-1.5">
-              <span>Open SIEM Dashboard</span>
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <!-- Lab Tasks Accordion/List -->
-      <div id="lab-tasks-container" class="space-y-6"></div>
-    </section>
-
-    <!-- Tab 2: Target Application (Victim Sandbox) -->
-    <section id="view-target" class="tab-view-container hidden h-full">
+    <!-- View 1: Target Application (Victim Sandbox) -->
+    <section id="view-target" class="tab-view-container h-full">
       <div id="target-app-container" class="min-h-[600px]"></div>
     </section>
 
-    <!-- Tab 3: SOC SIEM Console -->
+    <!-- View 2: SOC SIEM Console -->
     <section id="view-siem" class="tab-view-container hidden">
       <div id="siem-container"></div>
-    </section>
-
-    <!-- Tab 4: IoC Cheat Sheet -->
-    <section id="view-cheatsheet" class="tab-view-container hidden">
-      <div id="cheatsheet-container"></div>
-    </section>
-
-    <!-- Tab 5: Progress & Badges -->
-    <section id="view-progress" class="tab-view-container hidden">
-      <div id="progress-container"></div>
     </section>
 
   </main>
@@ -174,14 +96,101 @@
   <!-- Footer -->
   <footer class="bg-[#0c1220] border-t border-slate-800/80 py-4 text-center text-xs text-slate-500 font-mono">
     <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
-      <div>SOC Analyst Web Attack Forensics & IoC Lab • Designed for Security Learners</div>
+      <div>SOC Analyst Web Attack Forensics Lab • Pure Client-Side Architecture</div>
       <div class="flex items-center gap-3">
-        <span>Hosted 100% Client-Side on GitHub Pages</span>
+        <span>Hosted 100% on GitHub Pages</span>
         <span>•</span>
         <span class="text-emerald-400">Zero Server Backend Required</span>
       </div>
     </div>
   </footer>
+
+  <!-- Instructions & Cheat Sheet Modal -->
+  <div id="guide-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md hidden">
+    <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-3xl w-full max-h-[88vh] flex flex-col shadow-2xl overflow-hidden">
+      <!-- Modal Header -->
+      <div class="px-6 py-4 bg-slate-950 border-b border-slate-800 flex items-center justify-between">
+        <div class="flex items-center gap-2.5">
+          <span class="text-lg">📖</span>
+          <h3 class="text-sm font-bold text-white font-mono">Lab Instructions & Forensic Reference Guide</h3>
+        </div>
+        <button id="btn-close-guide" class="text-slate-400 hover:text-white p-1 rounded-lg text-sm font-bold">
+          ✕
+        </button>
+      </div>
+
+      <!-- Modal Body -->
+      <div class="flex-1 overflow-y-auto p-6 space-y-6 text-xs text-slate-300">
+        <!-- Section: How to Perform Lab -->
+        <div class="space-y-3">
+          <h4 class="text-emerald-400 font-bold uppercase tracking-wider text-xs font-mono">
+            1. How to Perform the Hands-On Lab
+          </h4>
+          <ol class="list-decimal list-inside space-y-2 leading-relaxed">
+            <li>
+              <strong>SQL Injection Attack:</strong> Go to <span class="text-cyan-400">Target Application -> Catalog Search</span>. Try the payload:
+              <br><code class="bg-slate-950 text-amber-300 px-2 py-1 rounded block my-1 font-mono select-all">' UNION SELECT 1,username,password,email,role FROM users--</code>
+              This extracts the hidden user database and displays the admin secret flag! Then switch to the <span class="text-cyan-400">SOC SIEM Console</span> to view the generated HTTP GET log with decoded SQL keywords.
+            </li>
+            <li>
+              <strong>Cross-Site Scripting (XSS) Attack:</strong> In either <span class="text-cyan-400">Catalog Search</span> (Reflected) or <span class="text-cyan-400">Feedback Board</span> (Stored), submit:
+              <br><code class="bg-slate-950 text-amber-300 px-2 py-1 rounded block my-1 font-mono select-all">&lt;script&gt;alert('XSS')&lt;/script&gt;</code>
+              Observe the execution modal revealing the XSS flag, and inspect the resulting log in the SIEM.
+            </li>
+            <li>
+              <strong>Authentication Brute Force Attack:</strong> Go to <span class="text-cyan-400">Target Application -> Login</span> or <span class="text-cyan-400">Attack Simulator</span>.
+              Click <span class="text-purple-300 font-mono font-bold">"Run Hydra Brute Force Burst"</span>. Watch the stream of 401s followed by the cracked password (<code class="text-emerald-400">dragon123</code>) with status 302!
+            </li>
+            <li>
+              <strong>Inspect Telemetry in SIEM:</strong> Switch to the <span class="text-cyan-400">SOC SIEM Console</span> to filter by IP, status code, or rule, and click <em>"Inspect"</em> on any log to see decoded payloads and forensic breakdowns.
+            </li>
+          </ol>
+        </div>
+
+        <!-- Section: URL Encoding Lookup -->
+        <div class="space-y-3">
+          <h4 class="text-emerald-400 font-bold uppercase tracking-wider text-xs font-mono">
+            2. Common URL Encodings in Web Logs
+          </h4>
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 font-mono text-[11px]">
+            <div class="bg-slate-950 p-2 rounded border border-slate-800"><span class="text-cyan-400">%27</span> = Single Quote (')</div>
+            <div class="bg-slate-950 p-2 rounded border border-slate-800"><span class="text-cyan-400">%22</span> = Double Quote (")</div>
+            <div class="bg-slate-950 p-2 rounded border border-slate-800"><span class="text-cyan-400">%3C</span> = Less Than (&lt;)</div>
+            <div class="bg-slate-950 p-2 rounded border border-slate-800"><span class="text-cyan-400">%3E</span> = Greater Than (&gt;)</div>
+            <div class="bg-slate-950 p-2 rounded border border-slate-800"><span class="text-cyan-400">%20</span> = Space ( )</div>
+            <div class="bg-slate-950 p-2 rounded border border-slate-800"><span class="text-cyan-400">%2D%2D</span> = SQL Comment (--)</div>
+            <div class="bg-slate-950 p-2 rounded border border-slate-800"><span class="text-cyan-400">%23</span> = Hash Comment (#)</div>
+            <div class="bg-slate-950 p-2 rounded border border-slate-800"><span class="text-cyan-400">%2527</span> = Double Encoded '</div>
+          </div>
+        </div>
+
+        <!-- Section: SIEM Filter Cheat Sheet -->
+        <div class="space-y-3">
+          <h4 class="text-emerald-400 font-bold uppercase tracking-wider text-xs font-mono">
+            3. SIEM Search Query Syntax
+          </h4>
+          <div class="space-y-1.5 font-mono text-[11px]">
+            <div class="bg-slate-950 p-2 rounded border border-slate-800 flex justify-between">
+              <span class="text-amber-300">status:401</span>
+              <span class="text-slate-400">Filter failed authentication events</span>
+            </div>
+            <div class="bg-slate-950 p-2 rounded border border-slate-800 flex justify-between">
+              <span class="text-amber-300">uri:*union*</span>
+              <span class="text-slate-400">Search for UNION SELECT in URI</span>
+            </div>
+            <div class="bg-slate-950 p-2 rounded border border-slate-800 flex justify-between">
+              <span class="text-amber-300">ip:198.51.100.44</span>
+              <span class="text-slate-400">Filter logs by specific threat actor IP</span>
+            </div>
+            <div class="bg-slate-950 p-2 rounded border border-slate-800 flex justify-between">
+              <span class="text-amber-300">rule:RULE-SEC-001</span>
+              <span class="text-slate-400">Filter by specific SIEM detection rule</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <!-- Toast Notification Container -->
   <div id="toast-container" class="fixed bottom-4 right-4 z-50 flex flex-col gap-2 pointer-events-none"></div>
