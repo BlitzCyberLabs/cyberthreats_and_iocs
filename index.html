@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>SOC Web Attack Forensics & IoC Hunting Lab (portal.aegis-corp.com)</title>
-  <meta name="description" content="Realistic SOC Training Lab: Master Indicators of Compromise (IoCs) for SQL Injection, Directory Traversal, and Cross-Site Scripting (XSS) with a white-theme enterprise web application and a dark-theme SOC SIEM monitor." />
+  <title>SOC Web Attack Forensics & IoC Hunting Lab (SQLi, XSS, Brute Force)</title>
+  <meta name="description" content="Realistic SOC Training Lab: Master Indicators of Compromise (IoCs) for SQL Injection, Cross-Site Scripting (XSS), and Login Brute Force with a white-theme enterprise web application and a dark-theme SOC SIEM monitor." />
 
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -52,7 +52,7 @@
               <span class="text-xs text-slate-400 font-mono hidden sm:inline">Web Application Log Forensics</span>
             </div>
             <h1 class="text-sm sm:text-base font-bold text-white tracking-tight">
-              SOC Analyst Lab: SQLi • Directory Traversal • XSS IoC Hunting
+              SOC Analyst Lab: SQLi • XSS • Brute Force IoC Hunting
             </h1>
           </div>
         </div>
@@ -130,25 +130,20 @@
           </h4>
           <ol class="list-decimal list-inside space-y-2 leading-relaxed">
             <li>
-              <strong>SQL Injection Attack:</strong> Open the <span class="text-cyan-400">Web Application</span> tab. In the <strong>Search Bar</strong>, test an unescaped single quote <code>'</code> (causes database error 500), then inject a UNION SELECT query:
-              <br><code class="bg-slate-950 text-amber-300 px-2 py-1 rounded block my-1 font-mono select-all">' UNION SELECT 1,username,password_hash,email,role FROM users--</code>
-              This exfiltrates the user database and reveals Flag #1: <strong class="text-emerald-400">BLITZ{5ql1_3xf1ltr4t10n_k9x27p4}</strong>. Switch to the <span class="text-cyan-400">SOC SIEM Log Monitor</span> to inspect the logged <code>GET /api/search?q=</code> request line and status code 500/200.
+              <strong>SQL Injection Attack (Login Bypass):</strong> Open the <span class="text-cyan-400">Web Application</span> tab and click <strong>"Sign In"</strong>. Inject a SQL boolean tautology or comment delimiter into the login form:
+              <br><code class="bg-slate-950 text-amber-300 px-2 py-1 rounded block my-1 font-mono select-all">admin' --</code>
+              <em>(or enter <code>' OR '1'='1</code> in the password field)</em>. The server returns an <strong>HTTP 302</strong> redirect taking you to the <strong>Admin Home Page</strong>, which reveals Flag #1: <strong class="text-emerald-400">BLITZ{5ql1_byp455_4dm1n_h0m3_7d91a}</strong>. Switch to the <span class="text-cyan-400">SOC SIEM Log Monitor</span> to inspect the logged <code>POST /auth/login</code> request body and status code.
             </li>
             <li>
-              <strong>Directory Traversal Attack:</strong> In the <span class="text-cyan-400">Web Application</span>, go to <strong>Document Center</strong>. In the filename input, escape the web root to access internal system secrets:
-              <br><code class="bg-slate-950 text-amber-300 px-2 py-1 rounded block my-1 font-mono select-all">../../../../system/secrets.env</code>
-              This exposes the server environment file with Flag #2: <strong class="text-emerald-400">BLITZ{p4th_tr4v3rs4l_f1l3_r34d_8a3d1}</strong>. Also test <code>../../../../etc/passwd</code> and view the path traversal IoCs (<code>../</code>) recorded in the SIEM access logs.
-            </li>
-            <li>
-              <strong>Cross-Site Scripting (XSS) Attack:</strong> In the <span class="text-cyan-400">Web Application</span> search bar, enter an executable script payload:
+              <strong>Cross-Site Scripting (XSS) Attack:</strong> In the <span class="text-cyan-400">Web Application</span> tab, go to the <strong>Home & Search</strong> bar. Enter an executable script payload:
               <br><code class="bg-slate-950 text-amber-300 px-2 py-1 rounded block my-1 font-mono select-all">&lt;script&gt;alert('XSS')&lt;/script&gt;</code>
-              Observe the script execution in the browser context revealing Flag #3: <strong class="text-emerald-400">BLITZ{x55_d0m_3x3cut10n_9c417e2}</strong>, then inspect the logged raw URL percent encoding (<code>%3C</code>) in the SOC SIEM console.
+              Observe the script execution in the browser context revealing Flag #2: <strong class="text-emerald-400">BLITZ{x55_r3fl3ct3d_s34rch_9b42e}</strong>, then inspect the logged raw URL percent encoding (<code>%3C</code>) in the SOC SIEM console.
             </li>
             <li>
-              <strong>Employee SSO Login:</strong> Test authentication with username <code>sec_admin</code> or test SQLi authentication bypass <code>' OR '1'='1</code>. Observe real <code>POST /auth/login</code> logs with request bodies captured in the SIEM.
+              <strong>Authentication Brute Force Analysis:</strong> Switch to the <span class="text-cyan-400">SOC SIEM Log Monitor</span> tab. Filter by <code>status:401</code> or the <strong>Brute Force</strong> category pill. Observe high-frequency <strong>HTTP 401 Unauthorized</strong> surges from external attacker IP <code>203.0.113.89</code> targeting account <code>sarah_admin</code>. Locate the sudden <strong>HTTP 302 Found</strong> log and inspect its request body to find the compromised password: <strong class="text-cyan-300 font-mono">Summer2026!</strong>.
             </li>
             <li>
-              <strong>Analyze SIEM Telemetry:</strong> Switch to the <span class="text-cyan-400">SOC SIEM Log Monitor</span> to view the live log stream, status code histogram, and inspect raw logs vs. decoded parameters.
+              <strong>Analyze SIEM Telemetry:</strong> Switch between the <span class="text-cyan-400">Web Application</span> and <span class="text-cyan-400">SOC SIEM Log Monitor</span> to view the live log stream, status code histogram, and inspect raw logs vs. decoded parameters.
             </li>
           </ol>
         </div>
@@ -166,7 +161,7 @@
             <div class="bg-slate-950 p-2 rounded border border-slate-800"><span class="text-cyan-400">%20</span> = Space ( )</div>
             <div class="bg-slate-950 p-2 rounded border border-slate-800"><span class="text-cyan-400">%2D%2D</span> = SQL Comment (--)</div>
             <div class="bg-slate-950 p-2 rounded border border-slate-800"><span class="text-cyan-400">%23</span> = Hash Comment (#)</div>
-            <div class="bg-slate-950 p-2 rounded border border-slate-800"><span class="text-cyan-400">%2e%2e</span> = Dot-Dot (..)</div>
+            <div class="bg-slate-950 p-2 rounded border border-slate-800"><span class="text-cyan-400">%3D</span> = Equals (=)</div>
           </div>
         </div>
 
@@ -177,20 +172,20 @@
           </h4>
           <div class="space-y-1.5 font-mono text-[11px]">
             <div class="bg-slate-950 p-2 rounded border border-slate-800 flex justify-between">
-              <span class="text-amber-300">status:500</span>
-              <span class="text-slate-400">Filter unhandled database error crashes</span>
+              <span class="text-amber-300">status:401</span>
+              <span class="text-slate-400">Filter failed authentication brute force spikes</span>
             </div>
             <div class="bg-slate-950 p-2 rounded border border-slate-800 flex justify-between">
-              <span class="text-amber-300">uri:*secrets.env*</span>
-              <span class="text-slate-400">Search for directory traversal file reads</span>
+              <span class="text-amber-300">uri:*login*</span>
+              <span class="text-slate-400">Search for authentication endpoint requests</span>
             </div>
             <div class="bg-slate-950 p-2 rounded border border-slate-800 flex justify-between">
-              <span class="text-amber-300">ip:198.51.100.88</span>
-              <span class="text-slate-400">Filter logs by specific threat actor IP</span>
+              <span class="text-amber-300">ip:203.0.113.89</span>
+              <span class="text-slate-400">Filter logs by brute force threat actor IP</span>
             </div>
             <div class="bg-slate-950 p-2 rounded border border-slate-800 flex justify-between">
-              <span class="text-amber-300">rule:RULE-SEC-006</span>
-              <span class="text-slate-400">Filter by Directory Traversal detection rule</span>
+              <span class="text-amber-300">rule:RULE-SEC-004</span>
+              <span class="text-slate-400">Filter by Brute Force detection rule</span>
             </div>
           </div>
         </div>

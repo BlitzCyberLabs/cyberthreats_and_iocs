@@ -6,21 +6,40 @@
 [![Cyber Defense Range](https://img.shields.io/badge/Track-SOC%20Tier%201%20Analyst-cyan?style=for-the-badge)](#curriculum)
 
 An interactive, browser-based **Cyber Defense Training Lab** designed to teach cybersecurity students, junior SOC analysts, and incident responders how to research, exploit, and detect **Indicators of Compromise (IoCs)** in web server access logs for:
-1. **SQL Injection (SQLi)**
-2. **Directory Traversal (Path Traversal / LFI)**
-3. **Cross-Site Scripting (XSS)**
+1. **SQL Injection (Login Bypass)**
+2. **Cross-Site Scripting (Reflected XSS in Search Bar)**
+3. **Authentication Brute Force (Login Page)**
 
 ---
 
 ## 🌟 What's Included
 
-* **🎯 Realistic Target Application (`Aegis Corporate Portal`)**: An authentic enterprise asset management and document repository featuring a vulnerable search directory, file repository, login portal, and support ticket system. No artificial cheat buttons—students research and craft real payloads!
-* **🛡️ SOC SIEM Console (`CyberWatch`)**: Real-time log telemetry stream, HTTP status code activity histogram, threat breakdown charts, Lucene-like search engine, and a deep-dive forensic log inspection drawer.
+* **🌐 Realistic Corporate Web Application (`portal.aegis-corp.com`)**:
+  * **White / Light Theme** corporate design for Aegis Enterprise Operations.
+  * **Search Bar**: Vulnerable to reflected Cross-Site Scripting (`GET /api/search?q=`).
+  * **Single Sign-On (SSO) Login**: Vulnerable to SQL injection authentication bypass (`POST /auth/login`).
+  * **Admin Home Page**: Confidential system control vault accessible upon successful login bypass, revealing the administrative challenge flag.
+* **🛡️ Dark-Theme SOC SIEM Application Log Monitor**:
+  * **Real-time Log Telemetry Stream**: Captures every real request line, HTTP method, client IP, status code, query parameters, and POST request body.
+  * **HTTP Status Code Histogram**: Real-time visual timeline showing bursts of `401 Unauthorized` and `500 Internal Server Error`.
+  * **Threat Breakdown & Attack Classification**: Real-time donut chart categorizing IoCs across SQLi, XSS, and Brute Force.
+  * **Lucene Search & Quick Filters**: Search by `status:401`, `uri:*login*`, `ip:203.0.113.89`, `rule:RULE-SEC-004`, or free text.
+  * **Deep Forensic Log Inspector**: Side-by-side comparison of raw Apache Combined format logs, decoded URL parameters, POST request bodies, and SIEM detection engine alerts.
 * **📝 Question Bank (8 Questions)**:
   * [LAB_QUESTIONS_AND_ANSWERS.doc](LAB_QUESTIONS_AND_ANSWERS.doc) (Word Document format with Question, Hint, and Final Answer)
   * [LAB_QUESTIONS_AND_ANSWERS.md](LAB_QUESTIONS_AND_ANSWERS.md) (Markdown format)
-* **🚩 Non-Predictable Flags**: Formatted as `BLITZ{...}`.
-* **🌐 100% GitHub Pages Compatible**: Pure client-side HTML5/JavaScript. Zero backend or database setup required.
+* **🚩 Non-Predictable Flags**: Formatted strictly as `BLITZ{...}`.
+* **🌐 100% GitHub Pages Compatible**: Pure client-side HTML5/ES6 JavaScript. Zero server, Python, or database setup required.
+
+---
+
+## 🚩 Master Flags & Forensic IoC Summary
+
+| Attack Vector | Target Endpoint | Forensic Indicator of Compromise (IoC) | Challenge Flag / Key Detail |
+|---|---|---|---|
+| **SQL Injection (Login Bypass)** | `POST /auth/login` | Tautology `' OR '1'='1` or comment delimiter `admin' --` in POST body; returns HTTP 302 | `BLITZ{5ql1_byp455_4dm1n_h0m3_7d91a}` |
+| **Cross-Site Scripting (Reflected)** | `GET /api/search?q=` | Unsanitized script tags encoded as `%3Cscript%3E` in access URI | `BLITZ{x55_r3fl3ct3d_s34rch_9b42e}` |
+| **Brute Force (Login)** | `POST /auth/login` | Surge of HTTP 401s followed by anomalous HTTP 302 from single IP | Attacker IP: `203.0.113.89`<br>Password: `Summer2026!` |
 
 ---
 
@@ -80,15 +99,16 @@ Then open `http://localhost:8000` in any web browser.
 
 | Search Query | Description |
 |---|---|
-| `status:401` | Filter for failed authentication attempts |
-| `status:500` | Filter for internal database server crashes |
-| `uri:*union*` | Wildcard search for UNION SELECT statements |
-| `ip:198.51.100.44` | Isolate logs from a specific threat actor IP |
-| `method:POST` | View all POST data submissions |
-| `rule:RULE-SEC-001` | Filter by specific SIEM detection rule ID |
+| `status:401` | Filter for failed authentication attempts (brute force surge) |
+| `status:302` | Filter for successful authentication redirects |
+| `status:500` | Filter for unhandled database syntax error crashes |
+| `uri:*login*` | Wildcard search for login authentication requests |
+| `ip:203.0.113.89` | Isolate logs from the brute force threat actor IP |
+| `method:POST` | View all POST data submissions with request bodies |
+| `rule:RULE-SEC-004` | Filter by Brute Force SIEM detection rule ID |
 | `category:sqli` | Quick filter for SQL injection telemetry |
 | `category:xss` | Quick filter for Cross-Site Scripting telemetry |
-| `category:brute_force` | Filter for brute force login attempts |
+| `category:brute_force` | Filter for authentication brute force events |
 | `ioc:true` | Display only logs triggering security detection rules |
 
 ---
@@ -104,12 +124,12 @@ soc lab/
 ├── css/
 │   └── styles.css             # Cyber UI styling and animations
 ├── data/
-│   └── baseline-logs.json     # Pre-loaded realistic historical access logs
+│   └── baseline-logs.json     # Pre-loaded realistic historical access logs (portal.aegis-corp.com)
 ├── js/
 │   ├── app.js                 # App coordinator and tab switcher
 │   ├── store.js               # Reactive state & localStorage persistence
-│   ├── target-app.js          # Interactive vulnerable victim app & attack simulator
-│   ├── soc-siem.js            # SIEM dashboard logic, search engine, charts, drawer
+│   ├── target-app.js          # White-theme corporate web app (portal.aegis-corp.com)
+│   ├── soc-siem.js            # Dark-theme SOC SIEM monitor, charts, search, and inspector
 │   ├── log-engine.js          # Log ingestion, synthetic traffic generator, exporters
 │   ├── detections.js          # Real-time SIEM detection rule engine (SQLi, XSS, Brute Force)
 │   └── utils.js               # Web Audio synthesizer, URL decoders, toast notifications
