@@ -1,0 +1,29 @@
+{
+  "name": "blitz-cyber-threats-lab",
+  "version": "2.0.0",
+  "description": "BLITZ Cyber Threats & IOC Investigation Lab - Enterprise SOC Training Platform",
+  "main": "server/server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node server/server.js",
+    "dev": "node server/server.js",
+    "generate-docs": "node server/scripts/generate-docs.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/BlitzCyberLabs/cyberthreats_and_iocs.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/BlitzCyberLabs/cyberthreats_and_iocs/issues"
+  },
+  "homepage": "https://github.com/BlitzCyberLabs/cyberthreats_and_iocs#readme",
+  "dependencies": {
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.6",
+    "docx": "^9.16.0",
+    "express": "^5.3.0"
+  }
+}
