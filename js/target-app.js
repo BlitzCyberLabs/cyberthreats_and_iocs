@@ -432,11 +432,25 @@ class TargetApp {
         const username = (uInput.value || '').trim();
         const password = (pInput.value || '').trim();
 
-        // Check SQL Injection Login Bypass (support in username or password: ' OR '1'='1, admin' --, ' OR 1=1 --, etc.)
-        const combined = `${username} ${password}`.toLowerCase();
-        const hasQuote = username.includes("'") || password.includes("'") || username.includes('"') || password.includes('"');
-        const hasSqliOp = combined.includes('or') || combined.includes('--') || combined.includes('#') || combined.includes('/*');
-        const isSqliBypass = hasQuote && hasSqliOp;
+        // Check SQL Injection Login Bypass (supports payloads in username or password)
+        const checkSqliBypass = (str) => {
+          if (!str) return false;
+          // Normalize smart quotes (e.g. 1’ or ‘1’ = ‘1) and unicode quotes to standard ' and "
+          const norm = str.replace(/[’‘`]/g, "'").replace(/[“”]/g, '"').toLowerCase().trim();
+          // Tautology: ' or '1'='1, or 1=1, or 'a'='a', or ''='', or 1=1--
+          const tautology = /\b(or|and)\b\s*(\(?\s*['"]?[^'"\s=]+['"]?\s*=\s*['"]?[^'"\s=]+|\d+\s*=\s*\d+)/i;
+          // Comment markers: --, #, /*
+          const comment = /(--|#|\/\*)/;
+          // Quote plus comment or keyword
+          const quoteWithCommentOrKeyword = /['"]\s*(--|#|\/\*|\bor\b|\band\b)/i;
+          // Direct boolean probes: or 1=1, admin' or 1=1
+          const booleanProbe = /\bor\b\s+\d+\s*=\s*\d+/i;
+          const adminComment = /admin['"\)]*\s*(--|#|\/\*)/i;
+
+          return tautology.test(norm) || (comment.test(norm) && (norm.includes('admin') || norm.includes('or') || norm.includes("'"))) || quoteWithCommentOrKeyword.test(norm) || booleanProbe.test(norm) || adminComment.test(norm);
+        };
+
+        const isSqliBypass = checkSqliBypass(username) || checkSqliBypass(password) || checkSqliBypass(`${username} ${password}`);
         const isValidCreds = username.toLowerCase() === 'admin' && password === 'dragon123';
         const isSarahCreds = username.toLowerCase() === 'sarah_admin' && password === 'Summer2026!';
 
@@ -457,7 +471,7 @@ class TargetApp {
         if (isSuccess) {
           sfx.playSuccess();
           this.currentUser = {
-            username: username && !username.includes("'") && !username.includes('"') ? username : 'sec_admin',
+            username: username && !username.includes("'") && !username.includes('"') && !username.includes('’') ? username : 'sec_admin',
             role: 'Global Administrator'
           };
           showToast("Authentication Successful! Redirecting to Admin Home Page...", "success");

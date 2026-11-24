@@ -130,9 +130,22 @@
           </h4>
           <ol class="list-decimal list-inside space-y-2 leading-relaxed">
             <li>
-              <strong>SQL Injection Attack (Login Bypass):</strong> Open the <span class="text-cyan-400">Web Application</span> tab and click <strong>"Sign In"</strong>. Inject a SQL boolean tautology or comment delimiter into the login form:
-              <br><code class="bg-slate-950 text-amber-300 px-2 py-1 rounded block my-1 font-mono select-all">admin' --</code>
-              <em>(or enter <code>' OR '1'='1</code> in the password field)</em>. The server returns an <strong>HTTP 302</strong> redirect taking you to the <strong>Admin Home Page</strong>, which reveals Flag #1: <strong class="text-emerald-400">BLITZ{5ql1_byp455_4dm1n_h0m3_7d91a}</strong>. Switch to the <span class="text-cyan-400">SOC SIEM Log Monitor</span> to inspect the logged <code>POST /auth/login</code> request body and status code.
+              <strong>SQL Injection Attack (Login Bypass &amp; IoC Extraction):</strong>
+              <div class="mt-1 space-y-1.5 pl-2 border-l-2 border-emerald-500/40">
+                <p><strong>Step A:</strong> In the <span class="text-cyan-400">Web Application</span> tab, click <strong>"Sign In"</strong> to open the Single Sign-On portal (<code>/auth/login</code>).</p>
+                <p><strong>Step B:</strong> Enter any SQL injection authentication bypass payload into either Username or Password:</p>
+                <div class="grid grid-cols-2 gap-1.5 font-mono text-[11px] bg-slate-950 p-2 rounded border border-slate-800">
+                  <span class="text-amber-300">admin' --</span>
+                  <span class="text-amber-300">admin' #</span>
+                  <span class="text-amber-300">admin' or '1'='1</span>
+                  <span class="text-amber-300">or 1=1--</span>
+                  <span class="text-amber-300">admin') or ('1'='1</span>
+                  <span class="text-amber-300">admin') or '1'='1--</span>
+                </div>
+                <p><strong>Step C:</strong> Click <strong>Sign In</strong>. The backend query evaluates to true, redirects via <strong>HTTP 302</strong>, and unlocks the <strong>Admin Home Page</strong>.</p>
+                <p><strong>Step D:</strong> Retrieve Flag #1 from the vault: <strong class="text-emerald-400 font-mono">BLITZ{5ql1_byp455_4dm1n_h0m3_7d91a}</strong>.</p>
+                <p><strong>Step E:</strong> Switch to the <span class="text-cyan-400">SOC SIEM Log Monitor</span> tab. Locate the <code>POST /auth/login</code> entry with status <code>302</code> and click <strong>"Inspect"</strong> to extract the IoCs (Status code <code>302</code>, payload in <code>Request Body</code>, and matched rule <code>RULE-SEC-002</code>).</p>
+              </div>
             </li>
             <li>
               <strong>Cross-Site Scripting (XSS) Attack:</strong> In the <span class="text-cyan-400">Web Application</span> tab, go to the <strong>Home & Search</strong> bar. Enter an executable script payload:

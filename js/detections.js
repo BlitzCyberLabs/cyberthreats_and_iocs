@@ -46,28 +46,31 @@ export const DETECTION_RULES = [
     name: "SQL Injection - Authentication Bypass / Tautology Probe",
     category: "sqli",
     severity: "CRITICAL",
-    description: "Detects SQL boolean tautologies (' OR '1'='1, ' OR 1=1), comment delimiters (-- , /* */, #), or unhandled syntax error probes.",
+    description: "Detects SQL boolean tautologies (' OR '1'='1, OR 1=1), comment delimiters (-- , /* */, #), or unhandled syntax error probes.",
     check: (log) => {
       const target = getSearchablePayload(log);
-      const decoded = decodePayloadSafely(target).toLowerCase();
+      const rawDecoded = decodePayloadSafely(target);
+      const decoded = rawDecoded.replace(/[’‘`]/g, "'").replace(/[“”]/g, '"').toLowerCase();
 
-      const tautologyPattern = /('|")\s*(or|and)\s+['"\d\w]+\s*=\s*['"\d\w]+/i;
+      const tautologyPattern = /\b(or|and)\b\s*(\(?\s*['"]?[^'"\s=]+['"]?\s*=\s*['"]?[^'"\s=]+|\d+\s*=\s*\d+)/i;
       const commentPattern = /(--|\/\*|#|%23)/i;
+      const booleanProbe = /\bor\b\s+\d+\s*=\s*\d+/i;
+      const adminComment = /admin['"\)]*\s*(--|#|\/\*)/i;
 
-      if (tautologyPattern.test(decoded)) {
+      if (tautologyPattern.test(decoded) || booleanProbe.test(decoded)) {
         return {
           matched: true,
           type: "SQL Injection (Authentication Bypass / Tautology)",
-          reason: "Boolean tautology expression (' OR '1'='1) detected in request payload. Used to bypass login authentication logic.",
+          reason: "Boolean tautology expression (' OR '1'='1, or 1=1) detected in request payload. Used to bypass login authentication logic.",
           mitigation: "Bind all query parameters using prepared statements (e.g. PDO in PHP, PreparedStatement in Java)."
         };
       }
 
-      if (commentPattern.test(decoded) && (/admin|select|where|login|or|and/i.test(decoded))) {
+      if (commentPattern.test(decoded) && (/admin|select|where|login|or|and/i.test(decoded) || adminComment.test(decoded))) {
         return {
           matched: true,
           type: "SQL Injection (Comment Truncation)",
-          reason: "SQL comment delimiter sequence (-- or /* */) attempting to truncate server SQL query logic.",
+          reason: "SQL comment delimiter sequence (-- or /* */ or #) attempting to truncate server SQL query logic.",
           mitigation: "Use parameterized queries and reject unescaped query delimiter syntax."
         };
       }
